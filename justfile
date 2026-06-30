@@ -30,6 +30,10 @@ rebuild-web:
 wheels:
     {{ ninja }} wheels
 
+# Build a packaged desktop installer for the current platform (into out/installer/dist)
+installer:
+    {{ ninja }} installer:package
+
 # Build and run all checks (lint + test) - lets ninja handle dependencies
 check:
     {{ ninja }} pylib qt check

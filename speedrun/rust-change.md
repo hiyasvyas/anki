@@ -128,7 +128,46 @@ undo entry, no mutation), so it is inherently undo-safe.
 Run: `cargo test -p anki stats::deck_score` → **4 passed**;
 `tools\ninja check:pytest:pylib` → **124 passed**.
 
-## Ships to the phone too
+## Ships to the phone too — built and proven on the AnkiDroid build
 
-Because the change lives in `rslib`, the same RPC is available in the AnkiDroid
-build that links the Rust backend — no mobile-specific code required.
+Because the change lives in `rslib`, the same RPC ships to AnkiDroid through the
+shared Rust backend (`rsdroid` / `librsdroid.so`) with **no mobile-specific
+engine code**. This was not just asserted — it was built and run on a phone
+(emulator) build:
+
+1. **Built the backend from this fork.** In `Anki-Android-Backend`, the `anki`
+   submodule (26.05b1, the version that repo targets) was overlaid with the six
+   changed files above and built with `cargo run -p build_rust`
+   (NDK r29, Rust 1.92.0, `cargo-ndk`, `x86_64-linux-android`). The `anki` crate
+   and `rsdroid` compiled cleanly for Android, and proto codegen produced the
+   Java/Kotlin bindings (`McatDeckScoreRequest/Response`,
+   `GeneratedBackend.mcatDeckScore(search)`) → `rsdroid-release.aar`.
+2. **Linked it into AnkiDroid.** Set `local_backend=true` in
+   `AnkiDroid/local.properties` so the app consumes the locally-built AAR instead
+   of the published one, then built `:AnkiDroid:assemblePlayDebug` (x86_64).
+3. **Ran it on the device.** Installed on the emulator with the full 2887-card
+   MCAT deck loaded. A debug-only hook in `DeckPicker.updateDeckList()` calls
+   `CollectionManager.getBackend().mcatDeckScore("")`. Logcat proof:
+
+   ```
+   I DeckPicker$updateDeckList: MCAT-SPEEDRUN McatDeckScore[phone/Rust]
+     score=0.0 range=[0.0,1.0] scorable=2887 rated=0 mastered=0 unseen=2887 giveUp=0
+   ```
+
+   i.e. the honest-deck-score model executed inside `librsdroid.so` on the phone:
+   2887 scorable cards, all unseen → score 0.0 with the maximum `[0.0, 1.0]`
+   confidence band (the model correctly abstains with no review data).
+
+### Files touched outside `rslib` for the phone build (merge difficulty)
+
+| File / repo | Change | Merge risk |
+|------|--------|-----------|
+| `Anki-Android-Backend/anki` (submodule) | Overlaid the 6 `rslib`/proto files above | **None** — same additive change; regenerate, don't hand-merge |
+| `Anki-Android/AnkiDroid/local.properties` | `local_backend=true` (local-only, gitignored) | **None** — not committed |
+| `Anki-Android/AnkiDroid/build.gradle` | Restrict ABI split to `x86_64` (build-time, emulator-only) | **None** — local convenience, revert for release |
+| `Anki-Android/.../libanki/Deck.kt` | +1 `when` branch for the new `Order.RELATIVE_OVERDUENESS` variant | **Low** — only needed because this AnkiDroid checkout predates the 26.05 backend; upstream's matching checkout already handles it |
+| `Anki-Android/.../DeckPicker.kt` | Debug-only logcat hook calling the new RPC | **None** — verification scaffold, not part of the engine change |
+
+The only *non-trivial* mobile-side edit (`Deck.kt`) is a symptom of pairing a
+newer engine with an older app checkout, not of the change itself — on a matched
+AnkiDroid/backend pair it disappears entirely.
