@@ -187,6 +187,7 @@ class DeckBrowser:
         gui_hooks.deck_browser_will_render_content(self, content)
         self.web.stdHtml(
             self._v1_upgrade_message(data.sched_upgrade_required)
+            + self._render_mcat_panel()
             + self._body % content.__dict__,
             css=["css/deckbrowser.css"],
             js=[
@@ -208,6 +209,166 @@ class DeckBrowser:
         return '<div id="studiedToday"><span>{}</span></div>'.format(
             self._render_data.studied_today
         )
+
+    # Speedrun: MCAT readiness panel (home page)
+    ##########################################################################
+
+    # Honesty / give-up thresholds for the home-page readiness display. The
+    # mastery + range logic lives in the Rust engine (rslib/src/stats); this
+    # only decides how to *present* it, and when to abstain.
+    _MCAT_MIN_REVIEWS = 10  # below this we refuse to show a score
+
+    def _render_mcat_panel(self) -> str:
+        """Home-page readiness card driven entirely by the Rust engine calls
+        ``mcat_deck_score`` and ``mcat_mastery``. Fails safe to an empty string
+        so it can never break the deck list."""
+        try:
+            score = self.mw.col._backend.mcat_deck_score(search="")
+            mastery = self.mw.col._backend.mcat_mastery(search="")
+        except Exception:
+            return ""
+
+        if score.total_cards == 0:
+            return ""
+
+        def pct(x: float) -> str:
+            return f"{x * 100:.0f}%"
+
+        rated = score.rated_cards
+        scorable = score.scorable_cards
+        coverage = (rated / scorable) if scorable else 0.0
+        threshold_pct = round(score.mastered_threshold * 100)
+
+        css = """
+<style>
+.mcat-card{max-width:640px;margin:14px auto 4px;padding:16px 18px;border:1px solid
+ var(--border,rgba(128,128,128,.35));border-radius:12px;text-align:start;
+ background:var(--canvas-elevated,rgba(128,128,128,.06));}
+.mcat-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.mcat-title{font-weight:700;font-size:15px;}
+.mcat-tag{font-size:11px;opacity:.6;}
+.mcat-score{font-size:34px;font-weight:800;line-height:1.1;}
+.mcat-sub{font-size:12px;opacity:.8;margin-top:2px;}
+.mcat-bar{position:relative;height:12px;border-radius:6px;margin:12px 0 6px;
+ background:rgba(128,128,128,.25);overflow:hidden;}
+.mcat-range{position:absolute;top:0;bottom:0;background:rgba(70,130,220,.55);}
+.mcat-point{position:absolute;top:-3px;width:3px;height:18px;background:currentColor;}
+.mcat-grid{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-top:8px;}
+.mcat-grid b{font-size:15px;display:block;}
+.mcat-note{font-size:11px;opacity:.7;margin-top:10px;line-height:1.4;}
+.mcat-conf{font-weight:700;}
+.mcat-abstain{font-size:15px;font-weight:700;margin:4px 0;}
+.mcat-subtitle{font-weight:700;font-size:13px;margin:2px 0 8px;display:flex;
+ justify-content:space-between;align-items:baseline;}
+.mcat-ttable{width:100%;border-collapse:collapse;font-size:12px;}
+.mcat-ttable th{text-align:start;opacity:.6;font-weight:600;padding:2px 6px;}
+.mcat-ttable td{padding:3px 6px;border-top:1px solid rgba(128,128,128,.18);}
+.mcat-tname{font-weight:600;}
+.mcat-tbarcell{width:120px;}
+.mcat-tbar{height:8px;border-radius:4px;background:rgba(128,128,128,.25);overflow:hidden;}
+.mcat-tbar>div{height:100%;background:rgba(70,160,90,.75);}
+</style>
+"""
+
+        # 7a Rust change on the dashboard: per-topic mastery from mcat_mastery.
+        # Weakest topics (lowest mastered fraction) surface first.
+        topic_rows = ""
+        for t in sorted(
+            mastery.topics,
+            key=lambda t: (
+                (t.mastered_cards / t.total_cards) if t.total_cards else 0.0,
+                t.topic,
+            ),
+        ):
+            frac = (t.mastered_cards / t.total_cards) if t.total_cards else 0.0
+            recall = pct(t.average_recall) if t.rated_cards else "—"
+            topic_rows += f"""
+    <tr><td class="mcat-tname">{html.escape(t.topic)}</td>
+    <td>{t.mastered_cards}/{t.total_cards}</td><td>{t.rated_cards}</td>
+    <td>{recall}</td>
+    <td class="mcat-tbarcell"><div class="mcat-tbar">
+      <div style="width:{frac * 100:.0f}%"></div></div></td></tr>"""
+
+        topics_html = f"""
+<div class="mcat-card">
+  <div class="mcat-subtitle"><span>Per-topic mastery</span>
+   <span class="mcat-tag">Rust engine · mcat_mastery</span></div>
+  <table class="mcat-ttable">
+    <tr><th>Topic</th><th>Mastered</th><th>Reviewed</th><th>Avg recall</th>
+     <th>Mastery</th></tr>
+    {topic_rows}
+  </table>
+  <div class="mcat-note">Mastered = current FSRS recall ≥ {threshold_pct}%.
+   Computed in a single Rust pass over {score.total_cards} cards.</div>
+</div>
+"""
+
+        # Honesty rule: refuse a score until there is enough evidence.
+        if rated < self._MCAT_MIN_REVIEWS:
+            return css + f"""
+<div class="mcat-card">
+  <div class="mcat-head">
+    <span class="mcat-title">MCAT Readiness</span>
+    <span class="mcat-tag">Rust engine · mcat_deck_score</span>
+  </div>
+  <div class="mcat-abstain">No score yet — not enough data.</div>
+  <div class="mcat-sub">Give-up rule: a score is shown only after at least
+   {self._MCAT_MIN_REVIEWS} reviews. You have <b>{rated}</b>.
+   Review some cards and this updates automatically.</div>
+  <div class="mcat-note">Mastered = current FSRS recall ≥ {threshold_pct}% ·
+   {score.total_cards} cards in deck.</div>
+</div>
+""" + topics_html
+
+        if coverage < 0.25:
+            conf, conf_why = "Low", "you have reviewed only a small slice of the deck"
+        elif coverage < 0.60:
+            conf, conf_why = "Medium", "a good chunk of the deck is still unreviewed"
+        else:
+            conf, conf_why = "High", "most of the deck has been reviewed"
+
+        # Best next topic to study: lowest average recall among reviewed topics.
+        rated_topics = [t for t in mastery.topics if t.rated_cards > 0]
+        if rated_topics:
+            weakest = min(rated_topics, key=lambda t: t.average_recall)
+            best_next = f"{weakest.topic} ({pct(weakest.average_recall)} recall)"
+        else:
+            best_next = "review any topic to begin"
+
+        lower = max(0.0, min(1.0, score.score_lower))
+        upper = max(0.0, min(1.0, score.score_upper))
+        point = max(0.0, min(1.0, score.score))
+
+        return css + f"""
+<div class="mcat-card">
+  <div class="mcat-head">
+    <span class="mcat-title">MCAT Readiness</span>
+    <span class="mcat-tag">Rust engine · mcat_deck_score</span>
+  </div>
+  <div class="mcat-score">{pct(point)}</div>
+  <div class="mcat-sub">mastery now · likely range
+   <b>{pct(lower)} – {pct(upper)}</b></div>
+  <div class="mcat-bar">
+    <div class="mcat-range" style="left:{lower * 100:.1f}%;width:{(upper - lower) * 100:.1f}%"></div>
+    <div class="mcat-point" style="left:{point * 100:.1f}%"></div>
+  </div>
+  <div class="mcat-grid">
+    <div>Confidence<b class="mcat-conf">{conf}</b></div>
+    <div>Coverage<b>{pct(coverage)}</b></div>
+    <div>Reviewed<b>{rated} / {scorable}</b></div>
+    <div>Mastered<b>{score.mastered_cards}</b></div>
+    <div>Given up<b>{score.give_up_cards}</b></div>
+  </div>
+  <div class="mcat-note">
+   <b>Why a range?</b> {score.unseen_cards} cards are still unreviewed, so the true
+   score is uncertain ({conf_why}). The band is a 95% interval that narrows as you
+   review more.<br>
+   <b>Best next topic:</b> {best_next}.<br>
+   Mastered = current FSRS recall ≥ {threshold_pct}% · give-up = lapses ≥
+   {score.give_up_lapses} and still not mastered ({score.give_up_cards} excluded).
+  </div>
+</div>
+""" + topics_html
 
     def _renderDeckTree(self, top: DeckTreeNode) -> str:
         buf = """

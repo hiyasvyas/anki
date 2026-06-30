@@ -436,6 +436,13 @@ impl super::SqliteStorage {
             .collect()
     }
 
+    pub(crate) fn all_cards_count(&self) -> Result<u32> {
+        self.db
+            .prepare("select count() from cards")?
+            .query_row([], |r| r.get(0))
+            .map_err(Into::into)
+    }
+
     pub(crate) fn max_new_card_position(&self) -> Result<u32> {
         self.db
             .prepare("select max(due)+1 from cards where type=0")?

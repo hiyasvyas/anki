@@ -1,0 +1,273 @@
+// Copyright: Ankitects Pty Ltd and contributors
+// License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
+
+//! Speedrun: a single, honest deck score.
+//!
+//! Reduces a search to one number you can defend, with two pieces of honesty
+//! built in:
+//!
+//! 1. **A confidence range, not a false point.** The score projects the
+//!    observed mastery rate (mastered / reviewed) onto cards you have not
+//!    reviewed yet, and reports a 95% Wilson interval around it. The more of
+//!    the deck is still unseen, the wider the range; once every card has been
+//!    reviewed the range collapses to a single exact value. A deck where you
+//!    have reviewed 5 of 500 cards cannot honestly claim a precise score.
+//!
+//! 2. **A give-up rule.** A card that has lapsed [`GIVE_UP_LAPSES`] times and is
+//!    still not mastered is excluded from the score (`give_up_cards`). Without
+//!    this, a handful of un-learnable "leech" cards would permanently cap the
+//!    score, tempting you to either game it (suspend them quietly) or despair.
+//!    Excluding them *and reporting the count* keeps the score both reachable
+//!    and honest.
+//!
+//! Like the mastery query, this is a read-only pass over the matched cards and
+//! touches no undo-tracked state, so it is inherently undo-safe.
+
+use anki_proto::stats::McatDeckScoreResponse;
+use fsrs::FSRS;
+use fsrs::FSRS5_DEFAULT_DECAY;
+
+use super::mastery::MASTERED_RETRIEVABILITY;
+use crate::prelude::*;
+use crate::scheduler::timing::SchedTimingToday;
+
+/// A card that has lapsed this many times and still is not mastered is treated
+/// as "given up on" and excluded from the score.
+pub const GIVE_UP_LAPSES: u32 = 8;
+
+/// z-score for a two-sided 95% confidence interval.
+const WILSON_Z: f64 = 1.96;
+
+/// Wilson score interval for `successes` out of `trials`. With no trials we know
+/// nothing, so the interval is the whole `[0, 1]` range.
+fn wilson_bounds(successes: u32, trials: u32) -> (f64, f64) {
+    if trials == 0 {
+        return (0.0, 1.0);
+    }
+    let n = trials as f64;
+    let p = successes as f64 / n;
+    let z2 = WILSON_Z * WILSON_Z;
+    let denom = 1.0 + z2 / n;
+    let center = (p + z2 / (2.0 * n)) / denom;
+    let margin = (WILSON_Z / denom) * (p * (1.0 - p) / n + z2 / (4.0 * n * n)).sqrt();
+    ((center - margin).max(0.0), (center + margin).min(1.0))
+}
+
+impl Collection {
+    /// Honest deck score for all cards matching `search` (empty = whole
+    /// collection). See the module docs for the scoring model.
+    pub fn mcat_deck_score(&mut self, search: &str) -> Result<McatDeckScoreResponse> {
+        let timing = self.timing_today()?;
+        let sched_timing = SchedTimingToday {
+            days_elapsed: timing.days_elapsed,
+            now: TimestampSecs::now(),
+            next_day_at: timing.next_day_at,
+        };
+        let fsrs = FSRS::new(None)?;
+        let cards = self.all_cards_for_search(search)?;
+
+        let total_cards = cards.len() as u32;
+        let mut scorable_cards: u32 = 0;
+        let mut rated_cards: u32 = 0;
+        let mut mastered_cards: u32 = 0;
+        let mut unseen_cards: u32 = 0;
+        let mut give_up_cards: u32 = 0;
+
+        for card in &cards {
+            let recall = card.memory_state.map(|state| {
+                let elapsed = card.seconds_since_last_review(&sched_timing).unwrap_or(0);
+                fsrs.current_retrievability_seconds(
+                    state.into(),
+                    elapsed,
+                    card.decay.unwrap_or(FSRS5_DEFAULT_DECAY),
+                )
+            });
+            let mastered = recall.map(|r| r >= MASTERED_RETRIEVABILITY).unwrap_or(false);
+
+            // Give-up rule: persistently failing and still not mastered. Such
+            // cards are excluded from the score entirely (but counted).
+            if !mastered && card.lapses >= GIVE_UP_LAPSES {
+                give_up_cards += 1;
+                continue;
+            }
+
+            scorable_cards += 1;
+            match recall {
+                Some(_) => {
+                    rated_cards += 1;
+                    if mastered {
+                        mastered_cards += 1;
+                    }
+                }
+                None => unseen_cards += 1,
+            }
+        }
+
+        // Project the observed mastery rate over the unseen cards. The interval
+        // width is driven entirely by how much of the deck is still unreviewed.
+        let (point, lower, upper) = if scorable_cards == 0 {
+            (0.0, 0.0, 0.0)
+        } else {
+            let scorable = scorable_cards as f64;
+            let unseen = unseen_cards as f64;
+            let proven = mastered_cards as f64;
+            let p_hat = if rated_cards > 0 {
+                proven / rated_cards as f64
+            } else {
+                0.0
+            };
+            let (w_lower, w_upper) = wilson_bounds(mastered_cards, rated_cards);
+            (
+                (proven + p_hat * unseen) / scorable,
+                (proven + w_lower * unseen) / scorable,
+                (proven + w_upper * unseen) / scorable,
+            )
+        };
+
+        Ok(McatDeckScoreResponse {
+            score: point as f32,
+            score_lower: lower as f32,
+            score_upper: upper as f32,
+            total_cards,
+            scorable_cards,
+            rated_cards,
+            mastered_cards,
+            unseen_cards,
+            give_up_cards,
+            mastered_threshold: MASTERED_RETRIEVABILITY,
+            give_up_lapses: GIVE_UP_LAPSES,
+        })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::card::CardType;
+    use crate::card::FsrsMemoryState;
+
+    /// Give the note's card an FSRS memory state with the supplied stability,
+    /// `days_ago` since its last review, and `lapses` lapse count.
+    fn set_card_state(
+        col: &mut Collection,
+        nid: NoteId,
+        deck_id: DeckId,
+        stability: f32,
+        days_ago: i64,
+        lapses: u32,
+    ) {
+        let mut card = col
+            .storage
+            .all_cards_of_note(nid)
+            .unwrap()
+            .into_iter()
+            .next()
+            .unwrap();
+        card.deck_id = deck_id;
+        card.ctype = CardType::Review;
+        card.interval = 100;
+        card.lapses = lapses;
+        card.decay = Some(FSRS5_DEFAULT_DECAY);
+        card.memory_state = Some(FsrsMemoryState {
+            stability,
+            difficulty: 5.0,
+        });
+        card.last_review_time = Some(TimestampSecs::now().adding_secs(-days_ago * 86_400));
+        col.storage.update_card(&card).unwrap();
+    }
+
+    fn add_basic_note(col: &mut Collection, deck_id: DeckId) -> NoteId {
+        let nt = col.get_notetype_by_name("Basic").unwrap().unwrap();
+        let mut note = nt.new_note();
+        col.add_note(&mut note, deck_id).unwrap();
+        note.id
+    }
+
+    #[test]
+    fn empty_collection_scores_zero_with_no_range() -> Result<()> {
+        let mut col = Collection::new();
+        let r = col.mcat_deck_score("")?;
+        assert_eq!(r.total_cards, 0);
+        assert_eq!(r.scorable_cards, 0);
+        assert_eq!(r.score, 0.0);
+        assert_eq!(r.score_lower, 0.0);
+        assert_eq!(r.score_upper, 0.0);
+        assert_eq!(r.give_up_lapses, GIVE_UP_LAPSES);
+        Ok(())
+    }
+
+    #[test]
+    fn fully_reviewed_deck_has_exact_score_and_zero_range() -> Result<()> {
+        let mut col = Collection::new();
+        let deck = col.get_or_create_normal_deck("MCAT::Biochem")?.id;
+        // Two mastered, two reviewed-but-forgotten -> exactly 50% mastered, and
+        // because every card is reviewed there is no uncertainty band.
+        for _ in 0..2 {
+            let n = add_basic_note(&mut col, deck);
+            set_card_state(&mut col, n, deck, 1000.0, 0, 0);
+        }
+        for _ in 0..2 {
+            let n = add_basic_note(&mut col, deck);
+            set_card_state(&mut col, n, deck, 0.5, 120, 0);
+        }
+
+        let r = col.mcat_deck_score("")?;
+        assert_eq!(r.total_cards, 4);
+        assert_eq!(r.scorable_cards, 4);
+        assert_eq!(r.rated_cards, 4);
+        assert_eq!(r.unseen_cards, 0);
+        assert_eq!(r.mastered_cards, 2);
+        assert!((r.score - 0.5).abs() < 1e-6);
+        // No unseen cards => the range collapses onto the point estimate.
+        assert!((r.score_lower - 0.5).abs() < 1e-6);
+        assert!((r.score_upper - 0.5).abs() < 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn unseen_cards_widen_the_range() -> Result<()> {
+        let mut col = Collection::new();
+        let deck = col.get_or_create_normal_deck("MCAT::Physics")?.id;
+        // One reviewed+mastered card, plus three brand-new unseen cards.
+        let n = add_basic_note(&mut col, deck);
+        set_card_state(&mut col, n, deck, 1000.0, 0, 0);
+        for _ in 0..3 {
+            add_basic_note(&mut col, deck);
+        }
+
+        let r = col.mcat_deck_score("")?;
+        assert_eq!(r.scorable_cards, 4);
+        assert_eq!(r.rated_cards, 1);
+        assert_eq!(r.unseen_cards, 3);
+        assert_eq!(r.mastered_cards, 1);
+        // The proven floor is 1/4; the projection pulls the point above it and
+        // the unseen cards leave a real gap between the bounds.
+        assert!(r.score >= 0.25);
+        assert!(r.score_lower < r.score_upper);
+        assert!(r.score_lower >= 0.25 - 1e-6);
+        assert!(r.score_upper <= 1.0 + 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn give_up_cards_are_excluded_but_counted() -> Result<()> {
+        let mut col = Collection::new();
+        let deck = col.get_or_create_normal_deck("MCAT::Orgo")?.id;
+        // One mastered card.
+        let good = add_basic_note(&mut col, deck);
+        set_card_state(&mut col, good, deck, 1000.0, 0, 0);
+        // One stale, heavily-lapsed card -> given up on.
+        let leech = add_basic_note(&mut col, deck);
+        set_card_state(&mut col, leech, deck, 0.1, 365, GIVE_UP_LAPSES);
+
+        let r = col.mcat_deck_score("")?;
+        assert_eq!(r.total_cards, 2);
+        assert_eq!(r.give_up_cards, 1);
+        assert_eq!(r.scorable_cards, 1);
+        assert_eq!(r.rated_cards, 1);
+        assert_eq!(r.mastered_cards, 1);
+        // The single leech no longer drags the score down to 50%.
+        assert!((r.score - 1.0).abs() < 1e-6);
+        Ok(())
+    }
+}

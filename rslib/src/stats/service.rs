@@ -36,6 +36,29 @@ impl crate::services::StatsService for Collection {
     ) -> error::Result<()> {
         self.set_graph_preferences(input)
     }
+
+    fn mcat_engine_status(
+        &mut self,
+    ) -> error::Result<anki_proto::stats::McatEngineStatusResponse> {
+        Ok(anki_proto::stats::McatEngineStatusResponse {
+            total_cards: self.storage.all_cards_count()?,
+            engine_tag: "speedrun-ok".to_string(),
+        })
+    }
+
+    fn mcat_mastery(
+        &mut self,
+        input: anki_proto::stats::McatMasteryRequest,
+    ) -> error::Result<anki_proto::stats::McatMasteryResponse> {
+        self.mcat_mastery(&input.search)
+    }
+
+    fn mcat_deck_score(
+        &mut self,
+        input: anki_proto::stats::McatDeckScoreRequest,
+    ) -> error::Result<anki_proto::stats::McatDeckScoreResponse> {
+        self.mcat_deck_score(&input.search)
+    }
 }
 
 impl From<RevlogReviewKind> for i32 {

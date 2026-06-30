@@ -16,6 +16,17 @@ service StatsService {
   rpc Graphs(GraphsRequest) returns (GraphsResponse);
   rpc GetGraphPreferences(generic.Empty) returns (GraphPreferences);
   rpc SetGraphPreferences(GraphPreferences) returns (generic.Empty);
+  // Speedrun: trivial engine-pipeline smoke test. Returns the total card count
+  // and a fixed tag, proving a new Rust RPC reaches Python end to end.
+  rpc McatEngineStatus(generic.Empty) returns (McatEngineStatusResponse);
+  // Speedrun: per-topic mastery breakdown. For each deck (topic) matching the
+  // search, returns how many cards are mastered and the average FSRS recall,
+  // computed in a single pass so it stays fast on large collections.
+  rpc McatMastery(McatMasteryRequest) returns (McatMasteryResponse);
+  // Speedrun: a single honest deck score for the search, with a confidence
+  // range (uncertainty from unreviewed cards) and a give-up rule (cards with
+  // too many lapses are excluded so the score can't be gamed or tanked).
+  rpc McatDeckScore(McatDeckScoreRequest) returns (McatDeckScoreResponse);
 }
 
 // Implicitly includes any of the above methods that are not listed in the
@@ -73,6 +84,73 @@ message CardStatsResponse {
 message GraphsRequest {
   string search = 1;
   uint32 days = 2;
+}
+
+message McatEngineStatusResponse {
+  uint32 total_cards = 1;
+  string engine_tag = 2;
+}
+
+message McatMasteryRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+message McatMasteryResponse {
+  // Mastery numbers for a single topic (deck).
+  message TopicMastery {
+    int64 deck_id = 1;
+    // Human-readable deck name, e.g. "MCAT::Biochemistry".
+    string topic = 2;
+    // All cards in this topic that matched the search.
+    uint32 total_cards = 3;
+    // Cards with an FSRS memory state (i.e. reviewed at least once).
+    uint32 rated_cards = 4;
+    // Cards whose current recall is at or above mastered_threshold.
+    uint32 mastered_cards = 5;
+    // Mean recall (0-1) over rated_cards; 0 when there are none.
+    float average_recall = 6;
+  }
+  repeated TopicMastery topics = 1;
+  // Recall cutoff used to decide whether a card counts as mastered.
+  float mastered_threshold = 2;
+  // Collection-wide totals across every returned topic.
+  uint32 total_cards = 3;
+  uint32 mastered_cards = 4;
+}
+
+message McatDeckScoreRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+message McatDeckScoreResponse {
+  // Honest deck score (0-1): the point estimate of true mastery over the
+  // scorable cards. It projects the observed mastery rate onto unreviewed
+  // cards, so it equals mastered/scorable exactly once everything is reviewed.
+  float score = 1;
+  // Lower/upper bounds of a 95% confidence range for `score`. The width comes
+  // from how many cards are still unreviewed (a Wilson interval on the reviewed
+  // sample, projected over the unseen cards); it collapses to a point when the
+  // whole deck has been reviewed.
+  float score_lower = 2;
+  float score_upper = 3;
+  // All cards that matched the search.
+  uint32 total_cards = 4;
+  // Cards that count toward the score (total minus given-up cards).
+  uint32 scorable_cards = 5;
+  // Scorable cards that have been reviewed at least once (have memory state).
+  uint32 rated_cards = 6;
+  // Scorable cards whose current recall is at or above mastered_threshold.
+  uint32 mastered_cards = 7;
+  // Scorable cards never reviewed yet (counted, but unproven).
+  uint32 unseen_cards = 8;
+  // Cards excluded by the give-up rule: too many lapses and still not mastered.
+  uint32 give_up_cards = 9;
+  // Recall cutoff used to decide whether a card counts as mastered.
+  float mastered_threshold = 10;
+  // Lapse count at or above which an unmastered card is given up on.
+  uint32 give_up_lapses = 11;
 }
 
 message GraphsResponse {
