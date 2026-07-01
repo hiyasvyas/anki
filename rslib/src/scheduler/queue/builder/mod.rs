@@ -287,9 +287,56 @@ impl Collection {
 
         queues.gather_cards(self)?;
 
+        // Speedrun: the pace-weakness order is applied here, in Rust, because the
+        // weakness score is a per-topic aggregate over recent answer times that
+        // does not fit a per-card SQL ORDER BY. This only reorders the already
+        // gathered reviews (limits are untouched), so it cannot change which
+        // cards are due and never mutates card state.
+        if queues.context.sort_options.review_order == ReviewCardOrder::PaceWeakness {
+            self.sort_review_by_pace_weakness(&mut queues.review)?;
+        }
+
         let queues = queues.build(self.learn_ahead_secs() as i64);
 
         Ok(queues)
+    }
+
+    /// Stable-sort gathered review cards so that cards from weaker/slower
+    /// topics come first. Ties keep the incoming (due) order.
+    fn sort_review_by_pace_weakness(&mut self, review: &mut [DueCard]) -> Result<()> {
+        use crate::stats::pace::current_rung;
+        use crate::stats::pace::starting_rung;
+        use crate::stats::pace::weakness;
+        use crate::stats::pace::DeckPace;
+        use crate::stats::pace::PACE_RUNGS_MS;
+
+        if review.len() < 2 {
+            return Ok(());
+        }
+        let now = TimestampSecs::now();
+        let start = starting_rung(self.pace_exam_months_remaining(now));
+        let pace_by_deck = self.pace_by_deck(now)?;
+
+        let mut weakness_cache: HashMap<DeckId, f64> = HashMap::new();
+        for card in review.iter() {
+            weakness_cache
+                .entry(card.current_deck_id)
+                .or_insert_with(|| {
+                    let pace = pace_by_deck
+                        .get(&card.current_deck_id)
+                        .copied()
+                        .unwrap_or_else(DeckPace::default);
+                    let rung = current_rung(start, &pace);
+                    weakness(&pace, PACE_RUNGS_MS[rung])
+                });
+        }
+
+        review.sort_by(|a, b| {
+            let wa = weakness_cache[&a.current_deck_id];
+            let wb = weakness_cache[&b.current_deck_id];
+            wb.partial_cmp(&wa).unwrap_or(std::cmp::Ordering::Equal)
+        });
+        Ok(())
     }
 }
 
@@ -542,5 +589,69 @@ mod test {
         CardAdder::new().deck(child.id).add(&mut col);
         col.set_current_deck(child.id).unwrap();
         assert_eq!(col.card_queue_len(), 0);
+    }
+
+    /// Speedrun: the PaceWeakness review order must surface cards from the
+    /// weak, slow topic before the strong, fast one — proving timing is a
+    /// first-class scheduler input, not just a display.
+    #[test]
+    fn pace_weakness_order_surfaces_weak_topic_first() -> Result<()> {
+        use crate::revlog::RevlogEntry;
+        use crate::revlog::RevlogId;
+        use crate::revlog::RevlogReviewKind;
+
+        let mut col = Collection::new();
+        let mut default = col.get_or_create_normal_deck("Default")?;
+        let strong = DeckAdder::new("Default::Strong").add(&mut col);
+        let weak = DeckAdder::new("Default::Weak").add(&mut col);
+
+        // One due review card in each topic.
+        let strong_cid = CardAdder::new()
+            .deck(strong.id)
+            .due_dates(["0"])
+            .add(&mut col)[0]
+            .id;
+        let weak_cid = CardAdder::new()
+            .deck(weak.id)
+            .due_dates(["0"])
+            .add(&mut col)[0]
+            .id;
+
+        // Recent revlog: strong topic answered fast + correctly, weak topic
+        // answered slowly + wrong. `id` is the review time in ms (kept recent).
+        let base_ms = (TimestampSecs::now().0 - 3600) * 1000;
+        let log = |cid: CardId, button: u8, ms: u32, i: i64| {
+            col.storage
+                .add_revlog_entry(
+                    &RevlogEntry {
+                        id: RevlogId(base_ms + i),
+                        cid,
+                        usn: Usn(-1),
+                        button_chosen: button,
+                        interval: 100,
+                        last_interval: 50,
+                        ease_factor: 2500,
+                        taken_millis: ms,
+                        review_kind: RevlogReviewKind::Review,
+                    },
+                    true,
+                )
+                .unwrap();
+        };
+        for i in 0..25 {
+            log(strong_cid, 3, 60_000, i);
+        }
+        for i in 0..25 {
+            log(weak_cid, 1, 240_000, 100 + i);
+        }
+
+        col.set_deck_review_order(&mut default, ReviewCardOrder::PaceWeakness);
+
+        let order = col.queue_as_deck_and_template(DeckId(1));
+        assert_eq!(order.len(), 2);
+        // Weak topic first, strong topic second.
+        assert_eq!(order[0].0, weak.id);
+        assert_eq!(order[1].0, strong.id);
+        Ok(())
     }
 }

@@ -5,6 +5,7 @@ mod card;
 mod deck_score;
 mod graphs;
 mod mastery;
+pub(crate) mod pace;
 mod service;
 mod today;
 

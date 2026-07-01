@@ -201,6 +201,37 @@ impl SqliteStorage {
             .map_err(Into::into)
     }
 
+    /// Speedrun pace model: recent graded reviews grouped by each card's
+    /// current deck. Only reviews with `id >= cutoff_ms` and a real button
+    /// press (ease 1-4) count. Returns `(deck_id, reviews, correct,
+    /// sum_taken_ms)`, where a review is "correct" when the button was
+    /// better than Again (>= Hard). One aggregate query, so it stays fast
+    /// on large collections.
+    pub(crate) fn pace_stats_by_deck(
+        &self,
+        cutoff_ms: i64,
+    ) -> Result<Vec<(DeckId, u32, u32, i64)>> {
+        self.db
+            .prepare_cached(
+                "SELECT c.did, \
+                        count(*), \
+                        sum(CASE WHEN r.ease >= 2 THEN 1 ELSE 0 END), \
+                        sum(r.time) \
+                 FROM revlog r JOIN cards c ON c.id = r.cid \
+                 WHERE r.id >= ?1 AND r.ease BETWEEN 1 AND 4 \
+                 GROUP BY c.did",
+            )?
+            .query_and_then([cutoff_ms], |row| -> Result<_> {
+                Ok((
+                    DeckId(row.get(0)?),
+                    row.get::<_, i64>(1)? as u32,
+                    row.get::<_, i64>(2)? as u32,
+                    row.get(3)?,
+                ))
+            })?
+            .collect()
+    }
+
     pub(crate) fn studied_today_by_deck(
         &self,
         day_cutoff: TimestampSecs,

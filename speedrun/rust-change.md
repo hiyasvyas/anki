@@ -1,6 +1,6 @@
 # Rust Engine Change — Mastery Query (Challenge 7a)
 
-**Exam:** MCAT · **Change chosen:** *Mastery query* — a backend call that returns,
+**Exam:** MCAT · **Change chosen:** _Mastery query_ — a backend call that returns,
 per topic, how many cards are mastered and the average recall, fast enough to
 power a dashboard on 50,000 cards.
 
@@ -22,7 +22,7 @@ dashboard can never disagree with Anki's stats.
 ### Definitions (stated, not hidden)
 
 - **Mastered** = current recall ≥ `0.9` (`MASTERED_RETRIEVABILITY`).
-- **Average recall** is taken over *rated* cards only. New/unseen cards have no
+- **Average recall** is taken over _rated_ cards only. New/unseen cards have no
   memory state, so they are counted in `total_cards` but excluded from the
   average — averaging them against a default would flatter the number and lie
   about how well the deck is actually known.
@@ -30,7 +30,7 @@ dashboard can never disagree with Anki's stats.
 ## Why this belongs in Rust, not Python
 
 1. **One engine, two apps.** The brief requires the desktop app and the phone
-   companion to *share* the engine, not reimplement it. Logic placed in `rslib`
+   companion to _share_ the engine, not reimplement it. Logic placed in `rslib`
    ships to the desktop (through `pylib/rsbridge`) **and** to AnkiDroid (through
    the same Rust backend) for free. The same RPC written in the `aqt` Python
    layer would run on desktop only and would have to be rewritten for the phone
@@ -42,7 +42,7 @@ dashboard can never disagree with Anki's stats.
    `fsrs` crate. In Python it would mean pulling every card row across the
    protobuf/IPC boundary (50k×) and there is no native FSRS in the Python layer
    — orders of magnitude more overhead.
-3. **Correctness / no drift.** Retrievability is *already* computed in Rust
+3. **Correctness / no drift.** Retrievability is _already_ computed in Rust
    (`fsrs::FSRS::current_retrievability_seconds`, used by the stats graphs).
    Reusing that path guarantees the mastery numbers match Anki's existing stats
    instead of forking a second, slightly-different implementation in Python.
@@ -80,17 +80,17 @@ engine; the 3 Rust unit tests for this change pass. Full proof command:
 
 ## Files touched (upstream) & future-merge difficulty
 
-| File | Change | Merge risk |
-|------|--------|-----------|
-| `rslib/src/stats/mastery.rs` | **New file** — implementation + tests | **None** (no upstream file to conflict) |
-| `rslib/src/stats/deck_score.rs` | **New file** — honest deck score + tests | **None** (no upstream file to conflict) |
-| `rslib/src/stats/mod.rs` | +1 line: `mod mastery;` | **Very low** |
-| `rslib/src/stats/service.rs` | +2 trait methods appended to `StatsService impl` | **Low** (additive; only conflicts if upstream edits the same impl tail) |
-| `rslib/src/storage/card/mod.rs` | +`all_cards_count()` helper | **Low** (additive method) |
-| `proto/anki/stats.proto` | +1 RPC on `StatsService`, +3 messages appended | **Low–medium** (one shared service block; resolve by re-adding our RPC line) |
-| `pylib/tests/test_stats.py` | +2 tests appended | **Low** |
+| File                            | Change                                           | Merge risk                                                                   |
+| ------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `rslib/src/stats/mastery.rs`    | **New file** — implementation + tests            | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/deck_score.rs` | **New file** — honest deck score + tests         | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/mod.rs`        | +1 line: `mod mastery;`                          | **Very low**                                                                 |
+| `rslib/src/stats/service.rs`    | +2 trait methods appended to `StatsService impl` | **Low** (additive; only conflicts if upstream edits the same impl tail)      |
+| `rslib/src/storage/card/mod.rs` | +`all_cards_count()` helper                      | **Low** (additive method)                                                    |
+| `proto/anki/stats.proto`        | +1 RPC on `StatsService`, +3 messages appended   | **Low–medium** (one shared service block; resolve by re-adding our RPC line) |
+| `pylib/tests/test_stats.py`     | +2 tests appended                                | **Low**                                                                      |
 
-**Design choice that minimizes merge pain:** all logic lives in a *new* module
+**Design choice that minimizes merge pain:** all logic lives in a _new_ module
 (`mastery.rs`); upstream files only receive small additive hooks. No generated
 files were hand-edited — the proto change regenerates the Rust (`anki_proto`),
 Python (`stats_pb2`, `_backend_generated.py`), and TS bindings automatically.
@@ -111,10 +111,14 @@ confidence range so it can't be mistaken for false precision.
   band is wide; review everything and it **collapses to a single value**. The
   score refuses to claim precision it hasn't earned.
 
-The **give-up rule** (when the app shows *no* score at all) lives in the
+The **give-up rule** (when the app shows _no_ score at all) lives in the
 presentation layer, not this engine call: the readiness panel abstains until
-there are at least **50 graded reviews and 50% topic coverage**. This RPC always
-returns the raw honest numbers; the UI decides when there is enough to show.
+there are at least **230 graded reviews and 50% topic coverage**. The 230 floor
+is deliberately tied to the size of one full-length MCAT (~230 scored questions),
+so the app will not project a readiness score until the student has effectively
+worked through at least a practice-test's worth of material — and at n = 230 the
+95% Wilson band is already tight (±~0.065 at p = 0.5). This RPC always returns the
+raw honest numbers; the UI decides when there is enough to show.
 
 Like the mastery query it is a strictly read-only pass (no write transaction, no
 undo entry, no mutation), so it is inherently undo-safe.
@@ -158,14 +162,14 @@ engine code**. This was not just asserted — it was built and run on a phone
 
 ### Files touched outside `rslib` for the phone build (merge difficulty)
 
-| File / repo | Change | Merge risk |
-|------|--------|-----------|
-| `Anki-Android-Backend/anki` (submodule) | Overlaid the 6 `rslib`/proto files above | **None** — same additive change; regenerate, don't hand-merge |
-| `Anki-Android/AnkiDroid/local.properties` | `local_backend=true` (local-only, gitignored) | **None** — not committed |
-| `Anki-Android/AnkiDroid/build.gradle` | Restrict ABI split to `x86_64` (build-time, emulator-only) | **None** — local convenience, revert for release |
-| `Anki-Android/.../libanki/Deck.kt` | +1 `when` branch for the new `Order.RELATIVE_OVERDUENESS` variant | **Low** — only needed because this AnkiDroid checkout predates the 26.05 backend; upstream's matching checkout already handles it |
-| `Anki-Android/.../DeckPicker.kt` | Debug-only logcat hook calling the new RPC | **None** — verification scaffold, not part of the engine change |
+| File / repo                               | Change                                                            | Merge risk                                                                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Anki-Android-Backend/anki` (submodule)   | Overlaid the 6 `rslib`/proto files above                          | **None** — same additive change; regenerate, don't hand-merge                                                                     |
+| `Anki-Android/AnkiDroid/local.properties` | `local_backend=true` (local-only, gitignored)                     | **None** — not committed                                                                                                          |
+| `Anki-Android/AnkiDroid/build.gradle`     | Restrict ABI split to `x86_64` (build-time, emulator-only)        | **None** — local convenience, revert for release                                                                                  |
+| `Anki-Android/.../libanki/Deck.kt`        | +1 `when` branch for the new `Order.RELATIVE_OVERDUENESS` variant | **Low** — only needed because this AnkiDroid checkout predates the 26.05 backend; upstream's matching checkout already handles it |
+| `Anki-Android/.../DeckPicker.kt`          | Debug-only logcat hook calling the new RPC                        | **None** — verification scaffold, not part of the engine change                                                                   |
 
-The only *non-trivial* mobile-side edit (`Deck.kt`) is a symptom of pairing a
+The only _non-trivial_ mobile-side edit (`Deck.kt`) is a symptom of pairing a
 newer engine with an older app checkout, not of the change itself — on a matched
 AnkiDroid/backend pair it disappears entirely.

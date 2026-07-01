@@ -37,9 +37,7 @@ impl crate::services::StatsService for Collection {
         self.set_graph_preferences(input)
     }
 
-    fn mcat_engine_status(
-        &mut self,
-    ) -> error::Result<anki_proto::stats::McatEngineStatusResponse> {
+    fn mcat_engine_status(&mut self) -> error::Result<anki_proto::stats::McatEngineStatusResponse> {
         Ok(anki_proto::stats::McatEngineStatusResponse {
             total_cards: self.storage.all_cards_count()?,
             engine_tag: "speedrun-ok".to_string(),
@@ -58,6 +56,13 @@ impl crate::services::StatsService for Collection {
         input: anki_proto::stats::McatDeckScoreRequest,
     ) -> error::Result<anki_proto::stats::McatDeckScoreResponse> {
         self.mcat_deck_score(&input.search)
+    }
+
+    fn mcat_pace(
+        &mut self,
+        input: anki_proto::stats::McatPaceRequest,
+    ) -> error::Result<anki_proto::stats::McatPaceResponse> {
+        self.mcat_pace(&input.search)
     }
 }
 

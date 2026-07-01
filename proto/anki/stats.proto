@@ -26,6 +26,11 @@ service StatsService {
   // Speedrun: a single honest deck score for the search, with a confidence
   // range whose width comes from how many cards are still unreviewed.
   rpc McatDeckScore(McatDeckScoreRequest) returns (McatDeckScoreResponse);
+  // Speedrun: per-topic pace model built on the answer time Anki already
+  // records. Returns each topic's recent accuracy, mean answer time, and the
+  // pace-ladder target it has earned, plus the weakness score used to order
+  // study. This is the read side of the pace-weakness review order.
+  rpc McatPace(McatPaceRequest) returns (McatPaceResponse);
 }
 
 // Implicitly includes any of the above methods that are not listed in the
@@ -148,6 +153,50 @@ message McatDeckScoreResponse {
   float mastered_threshold = 10;
 
   reserved 9, 11;  // formerly give_up_cards / give_up_lapses (removed)
+}
+
+message McatPaceRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+message McatPaceResponse {
+  // Pace numbers for a single topic (deck), over the recent window.
+  message TopicPace {
+    int64 deck_id = 1;
+    // Human-readable deck name, e.g. "MCAT::Biochemistry".
+    string topic = 2;
+    // Graded reviews for this topic inside the recent window.
+    uint32 window_reviews = 3;
+    // Fraction correct (button >= Hard) over the window; 0 with no reviews.
+    float accuracy = 4;
+    // Mean answer time in ms over the window; 0 with no reviews.
+    float mean_answer_ms = 5;
+    // Current pace target in ms for this topic; 0 means unlimited (no timer).
+    uint32 target_ms = 6;
+    // Ladder rung index (0 = unlimited ... 4 = goal).
+    uint32 rung = 7;
+    // Human-readable phase label, e.g. "Unlimited" or "90s goal".
+    string phase = 8;
+    // True when accuracy and speed already clear the next shorter rung but the
+    // window does not yet hold enough reviews to lock it in.
+    bool ready_for_next_rung = 9;
+    // Relative weakness used to order study (higher = surfaced sooner).
+    float weakness = 10;
+  }
+  repeated TopicPace topics = 1;
+  // Goal target in ms at the top of the ladder (the 90s goal).
+  uint32 goal_ms = 2;
+  // Minimum graded reviews in the window before a rung can advance.
+  uint32 min_window_reviews = 3;
+  // Minimum accuracy before a rung can advance.
+  float min_accuracy = 4;
+  // Months until the exam (from the stored exam date); -1 when unset.
+  float exam_months_remaining = 5;
+  // Starting rung implied by the exam date.
+  uint32 start_rung = 6;
+  // Recent-window length in days.
+  uint32 window_days = 7;
 }
 
 message GraphsResponse {

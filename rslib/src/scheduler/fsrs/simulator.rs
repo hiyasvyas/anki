@@ -116,8 +116,10 @@ fn create_review_priority_fn(
             wrap!(move |_c, _w| rand::rng().random_range(0..deck_size) as i32)
         }
 
-        // Not implemented yet
-        Added | ReverseAdded | RelativeOverdueness => None,
+        // Not implemented yet. PaceWeakness depends on recent answer-time
+        // aggregates that the simulator does not model, so it falls back to the
+        // default ordering here.
+        Added | ReverseAdded | RelativeOverdueness | PaceWeakness => None,
     }
 }
 

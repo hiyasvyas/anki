@@ -25,8 +25,8 @@ use crate::scheduler::timing::SchedTimingToday;
 /// z-score for a two-sided 95% confidence interval.
 const WILSON_Z: f64 = 1.96;
 
-/// Wilson score interval for `successes` out of `trials`. With no trials we know
-/// nothing, so the interval is the whole `[0, 1]` range.
+/// Wilson score interval for `successes` out of `trials`. With no trials we
+/// know nothing, so the interval is the whole `[0, 1]` range.
 fn wilson_bounds(successes: u32, trials: u32) -> (f64, f64) {
     if trials == 0 {
         return (0.0, 1.0);
@@ -68,7 +68,9 @@ impl Collection {
                     card.decay.unwrap_or(FSRS5_DEFAULT_DECAY),
                 )
             });
-            let mastered = recall.map(|r| r >= MASTERED_RETRIEVABILITY).unwrap_or(false);
+            let mastered = recall
+                .map(|r| r >= MASTERED_RETRIEVABILITY)
+                .unwrap_or(false);
 
             scorable_cards += 1;
             match recall {

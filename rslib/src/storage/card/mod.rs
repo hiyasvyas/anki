@@ -900,6 +900,9 @@ fn review_order_sql(order: ReviewCardOrder, timing: SchedTimingToday, fsrs: bool
         ReviewCardOrder::Random => vec![],
         ReviewCardOrder::Added => vec![ReviewOrderSubclause::Added],
         ReviewCardOrder::ReverseAdded => vec![ReviewOrderSubclause::ReverseAdded],
+        // Speedrun: gather in plain due order here; the queue builder re-sorts
+        // the gathered reviews in Rust by the per-topic pace weakness score.
+        ReviewCardOrder::PaceWeakness => vec![ReviewOrderSubclause::Day],
     };
     subclauses.push(ReviewOrderSubclause::Random);
 

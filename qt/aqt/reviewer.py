@@ -405,6 +405,9 @@ class Reviewer:
         # user hook
         gui_hooks.reviewer_did_show_question(c)
         self._auto_advance_to_answer_if_enabled()
+        # Speedrun: per-card pace target for this card's topic (hidden when
+        # unlimited). Shows time-to-decision with a soft "move on" cue.
+        self.web.eval(self._pace_timer_js(self._pace_target_ms_for_current_card()))
 
     def _auto_advance_to_answer_if_enabled(self) -> None:
         self._clear_auto_advance_timers()
@@ -442,6 +445,49 @@ class Reviewer:
             self._showAnswer()
         else:
             tooltip(tr.studying_question_time_elapsed())
+
+    # Speedrun: per-card pace target timer
+    ##########################################################################
+
+    def _pace_target_ms_for_current_card(self) -> int:
+        """Pace target (ms) for the current card's topic, via the Rust
+        ``mcat_pace`` model. 0 means unlimited (no timer shown). Fails safe to
+        0 so it can never interrupt a review."""
+        if self.card is None:
+            return 0
+        try:
+            pace = self.mw.col._backend.mcat_pace(search="")
+        except Exception:
+            return 0
+        did = int(self.card.current_deck_id())
+        for topic in pace.topics:
+            if topic.deck_id == did:
+                return int(topic.target_ms)
+        return 0
+
+    def _pace_timer_js(self, target_ms: int) -> str:
+        """Self-contained JS that (re)draws a small pace overlay. target_ms <= 0
+        clears it. Injected inline so no web-bundle rebuild is needed."""
+        return (
+            "(function(){"
+            "if(window.__mcatPaceTimer){clearInterval(window.__mcatPaceTimer);window.__mcatPaceTimer=null;}"
+            "var el=document.getElementById('mcat-pace');"
+            "var target=%d;"
+            "if(!target||target<=0){if(el)el.remove();return;}"
+            "if(!el){el=document.createElement('div');el.id='mcat-pace';"
+            "el.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;"
+            "padding:6px 10px;border-radius:8px;font:600 12px system-ui;pointer-events:none;';"
+            "document.body.appendChild(el);}"
+            "var start=Date.now();"
+            "function upd(){var el=document.getElementById('mcat-pace');if(!el)return;"
+            "var elapsed=Date.now()-start;var remain=Math.ceil((target-elapsed)/1000);"
+            "if(elapsed<=target){el.textContent='\\u23f1 '+remain+'s to target';"
+            "el.style.background='rgba(70,130,220,.15)';el.style.border='1px solid rgba(70,130,220,.5)';}"
+            "else{el.textContent='\\u23ed move on ('+Math.floor(elapsed/1000)+'s)';"
+            "el.style.background='rgba(220,120,60,.2)';el.style.border='1px solid rgba(220,120,60,.7)';}}"
+            "upd();window.__mcatPaceTimer=setInterval(upd,500);"
+            "})();"
+        ) % target_ms
 
     def autoplay(self, card: Card) -> bool:
         print("use card.autoplay() instead of reviewer.autoplay(card)")
@@ -484,6 +530,8 @@ class Reviewer:
         # user hook
         gui_hooks.reviewer_did_show_answer(c)
         self._auto_advance_to_question_if_enabled()
+        # Speedrun: the decision has been made; stop the pace target overlay.
+        self.web.eval(self._pace_timer_js(0))
 
     def _auto_advance_to_question_if_enabled(self) -> None:
         self._clear_auto_advance_timers()

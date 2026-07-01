@@ -114,6 +114,12 @@ export function reviewOrderChoices(
                 label: tr.decksLatestAddedFirst(),
                 value: DeckConfig_Config_ReviewCardOrder.REVERSE_ADDED,
             },
+            {
+                // Speedrun: pace-weakness order (see stats/pace.rs). Literal
+                // label keeps this MCAT-only addition out of the i18n catalog.
+                label: "Pace: weakest/slowest topics first",
+                value: DeckConfig_Config_ReviewCardOrder.PACE_WEAKNESS,
+            },
         ],
     ];
 }

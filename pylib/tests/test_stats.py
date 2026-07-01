@@ -98,6 +98,59 @@ def test_mcat_deck_score():
     assert 0.0 < report.mastered_threshold <= 1.0
 
 
+def test_mcat_pace():
+    # Speedrun: per-topic pace model over the shared Rust engine, built from the
+    # answer time Anki already records, plus the exam-date starting rung.
+    col = getEmptyCol()
+    empty = col._backend.mcat_pace(search="")
+    assert len(empty.topics) == 0
+    assert empty.goal_ms == 90_000
+    assert empty.exam_months_remaining == -1.0  # no exam date set yet
+
+    note = col.newNote()
+    note["Front"] = "foo"
+    col.addNote(note)
+    c = col.sched.getCard()
+    col.sched.answerCard(c, 3)  # one graded review -> answer time recorded
+
+    report = col._backend.mcat_pace(search="")
+    assert len(report.topics) == 1
+    topic = report.topics[0]
+    assert topic.window_reviews >= 1
+    # A single 'Good' answer is accurate; with no exam date the target starts
+    # unlimited (0) and stays there until the evidence gate is met.
+    assert topic.accuracy == 1.0
+    assert topic.target_ms == 0
+
+    # The exam date only sets the *starting* rung: ~2 months out must start
+    # tighter than unlimited.
+    import time
+
+    col.set_config("examDate", int(time.time()) + 60 * 86400)
+    tightened = col._backend.mcat_pace(search="")
+    assert tightened.exam_months_remaining > 0
+    assert tightened.start_rung >= 1
+
+
+def test_mcat_pace_is_undo_safe():
+    # Speedrun: mcat_pace is strictly read-only, so it must not create or clear
+    # an undo entry, and undo of a real action must still work afterwards.
+    col = getEmptyCol()
+    note = col.newNote()
+    note["Front"] = "foo"
+    col.addNote(note)
+    c = col.sched.getCard()
+    col.sched.answerCard(c, 3)
+
+    undo_before = col.undo_status().undo
+    assert undo_before
+    col._backend.mcat_pace(search="")
+    assert col.undo_status().undo == undo_before
+    col.undo()
+    _, ok = col.fix_integrity()
+    assert ok
+
+
 def test_mcat_queries_are_undo_safe():
     # Speedrun: the mastery/score RPCs are strictly read-only, so calling them
     # must not create or clear an undo entry, undo of a real action must still

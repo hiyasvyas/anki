@@ -7,7 +7,7 @@
 This is an AGPL-licensed fork of [Anki](https://apps.ankiweb.net) that turns the
 shared Anki engine into an **honest MCAT readiness tool**. It runs on the
 **desktop** (forked Anki) and on a **phone companion** (AnkiDroid) that share the
-*same Rust engine* — the engine change ships to both, not a rewrite.
+_same Rust engine_ — the engine change ships to both, not a rewrite.
 
 The guiding rule of this project is **honesty over flattery**: the app refuses to
 show a readiness number until it has enough evidence, and every number it shows
@@ -21,20 +21,20 @@ shows nothing.
 The MCAT asks for more than memory, so we keep three different questions separate
 and never blend them into one flattering number:
 
-| Question | "Can the student…" | Status |
-|----------|--------------------|--------|
-| **Memory** | …recall a fact right now? | **Built** — FSRS recall surfaced as an honest, ranged score (this milestone) |
-| **Performance** | …answer a new, exam-style question that uses the fact? | Planned (later milestone) |
-| **Readiness** | …get what score today, and how sure are we? | Partial — a deck-level mastery score with range + abstention give-up rule (this milestone); full section→scale mapping planned |
+| Question        | "Can the student…"                                     | Status                                                                                                                         |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Memory**      | …recall a fact right now?                              | **Built** — FSRS recall surfaced as an honest, ranged score (this milestone)                                                   |
+| **Performance** | …answer a new, exam-style question that uses the fact? | Planned (later milestone)                                                                                                      |
+| **Readiness**   | …get what score today, and how sure are we?            | Partial — a deck-level mastery score with range + abstention give-up rule (this milestone); full section→scale mapping planned |
 
 ### Product thesis (from the Brainlift)
 
 Beyond memory, the longer-term goal is a **passage-timing and reasoning trainer**
 for MCAT CARS and science passages: train comprehension and decision-making
-*first* with the timer hidden, then layer in pacing pressure (soft checkpoints,
+_first_ with the timer hidden, then layer in pacing pressure (soft checkpoints,
 per-passage targets, move-on prompts, strict timed practice) as test day
 approaches. The learning-science rationale (test anxiety competes with working
-memory; pacing is a trainable skill best added *after* reading fluency) is
+memory; pacing is a trainable skill best added _after_ reading fluency) is
 documented in the Brainlift. The current build lays the honest-measurement
 foundation that the timing trainer will sit on top of.
 
@@ -45,15 +45,19 @@ foundation that the timing trainer will sit on top of.
 The dashboard **abstains** from a readiness score until there is enough evidence,
 and is explicit about every threshold:
 
-- **Mastered** = a card whose *current* FSRS recall is **≥ 90%**
+- **Mastered** = a card whose _current_ FSRS recall is **≥ 90%**
   (`MASTERED_RETRIEVABILITY = 0.9`).
-- **Give-up rule — no score shown** until there are at least **50 graded reviews**
-  (`_MCAT_MIN_REVIEWS = 50`) **and** at least **50% topic coverage**
+- **Give-up rule — no score shown** until there are at least **230 graded reviews**
+  (`_MCAT_MIN_REVIEWS = 230`) **and** at least **50% topic coverage**
   (`_MCAT_MIN_TOPIC_COVERAGE = 0.5`). Below either line the panel says
-  *"No score yet — not enough data"* and names exactly which axis is short.
-  Rationale: at n = 50 the 95% Wilson band is meaningful (±~0.14 at p = 0.5), and
-  the topic gate stops a deck that only drilled one subject from claiming
-  whole-exam readiness.
+  _"No score yet — not enough data"_ and names exactly which axis is short.
+  Rationale: **230 ≈ the number of scored questions on one full-length MCAT**, so
+  the app refuses to guess at readiness until the student has worked through at
+  least a practice-test's worth of material — the same "take full-lengths before
+  you trust a projected score" benchmark the field uses. At n = 230 the 95%
+  Wilson band is already reasonably tight (±~0.065 at p = 0.5, vs ±~0.14 at 50),
+  so the first score we ever show is honest *and* precise. The topic gate stops a
+  deck that only drilled one subject from claiming whole-exam readiness.
 - **Range, not a false point.** The score projects the observed mastery rate
   (mastered ÷ reviewed) over not-yet-reviewed cards and reports a **95% Wilson
   interval** (z = 1.96). The more of the deck is unseen, the wider the band; once
@@ -94,16 +98,16 @@ Full rationale, undo-safety argument, and merge-risk analysis:
 
 ### Files touched (for future-merge tracking)
 
-| File | Change | Merge risk |
-|------|--------|-----------|
-| `rslib/src/stats/mastery.rs` | **New** — mastery query + 3 unit tests | None (new file) |
-| `rslib/src/stats/deck_score.rs` | **New** — honest deck score + 4 unit tests | None (new file) |
-| `rslib/src/stats/mod.rs` | `+mod mastery; +mod deck_score;` | Very low |
-| `rslib/src/stats/service.rs` | `+` trait methods on `StatsService` | Low (additive) |
-| `rslib/src/storage/card/mod.rs` | `+ all_cards_count()` helper | Low (additive) |
-| `proto/anki/stats.proto` | `+` 1 RPC group + messages | Low–medium (shared service block) |
-| `qt/aqt/deckbrowser.py` | `+ _render_mcat_panel()` dashboard card | Low (additive method) |
-| `pylib/tests/test_stats.py` | `+` 4 tests (incl. undo-safety) | Low |
+| File                            | Change                                     | Merge risk                        |
+| ------------------------------- | ------------------------------------------ | --------------------------------- |
+| `rslib/src/stats/mastery.rs`    | **New** — mastery query + 3 unit tests     | None (new file)                   |
+| `rslib/src/stats/deck_score.rs` | **New** — honest deck score + 4 unit tests | None (new file)                   |
+| `rslib/src/stats/mod.rs`        | `+mod mastery; +mod deck_score;`           | Very low                          |
+| `rslib/src/stats/service.rs`    | `+` trait methods on `StatsService`        | Low (additive)                    |
+| `rslib/src/storage/card/mod.rs` | `+ all_cards_count()` helper               | Low (additive)                    |
+| `proto/anki/stats.proto`        | `+` 1 RPC group + messages                 | Low–medium (shared service block) |
+| `qt/aqt/deckbrowser.py`         | `+ _render_mcat_panel()` dashboard card    | Low (additive method)             |
+| `pylib/tests/test_stats.py`     | `+` 4 tests (incl. undo-safety)            | Low                               |
 
 No generated files are hand-edited; the proto change regenerates the Rust,
 Python, and TypeScript bindings automatically.
@@ -113,21 +117,21 @@ Python, and TypeScript bindings automatically.
 ## 4. Architecture overview (two apps, one engine)
 
 ```
-                ┌─────────────────────────────┐
-                │   Core engine — Rust (rslib) │
-                │  FSRS · scheduler · storage  │
-                │  + McatMastery / McatDeckScore│
-                └──────────────┬──────────────┘
-                  protobuf RPC over both bridges
-        ┌──────────────────────┴───────────────────────┐
-        │                                               │
- ┌──────▼─────── Desktop ───────┐            ┌──────────▼──── Mobile ───────┐
- │ pylib/rsbridge (PyO3)        │            │ Anki-Android-Backend         │
- │   → Python (_backend)        │            │   → librsdroid.so (JNI)      │
- │ qt/aqt  (PyQt GUI)           │            │ AnkiDroid (Kotlin UI)        │
- │   → MCAT readiness dashboard │            │   → reviews on shared engine │
- │ ts/     (Svelte web views)   │            │                              │
- └──────────────────────────────┘            └──────────────────────────────┘
+               ┌─────────────────────────────┐
+               │   Core engine — Rust (rslib) │
+               │  FSRS · scheduler · storage  │
+               │  + McatMastery / McatDeckScore│
+               └──────────────┬──────────────┘
+                 protobuf RPC over both bridges
+       ┌──────────────────────┴───────────────────────┐
+       │                                               │
+┌──────▼─────── Desktop ───────┐            ┌──────────▼──── Mobile ───────┐
+│ pylib/rsbridge (PyO3)        │            │ Anki-Android-Backend         │
+│   → Python (_backend)        │            │   → librsdroid.so (JNI)      │
+│ qt/aqt  (PyQt GUI)           │            │ AnkiDroid (Kotlin UI)        │
+│   → MCAT readiness dashboard │            │   → reviews on shared engine │
+│ ts/     (Svelte web views)   │            │                              │
+└──────────────────────────────┘            └──────────────────────────────┘
 ```
 
 - The **same Rust crate** (`rslib`) is compiled into the desktop (`pylib/rsbridge`,
@@ -138,11 +142,11 @@ Python, and TypeScript bindings automatically.
 
 ### Repositories
 
-| Repo | Path | Role |
-|------|------|------|
-| `anki` (this fork) | `C:\dev\speedrun\anki` | Desktop app + the Rust engine change |
+| Repo                   | Path                                   | Role                                                 |
+| ---------------------- | -------------------------------------- | ---------------------------------------------------- |
+| `anki` (this fork)     | `C:\dev\speedrun\anki`                 | Desktop app + the Rust engine change                 |
 | `Anki-Android-Backend` | `C:\dev\speedrun\Anki-Android-Backend` | Builds `librsdroid.so` from the shared `anki` engine |
-| `Anki-Android` | `C:\dev\speedrun\Anki-Android` | AnkiDroid Kotlin UI (phone companion) |
+| `Anki-Android`         | `C:\dev\speedrun\Anki-Android`         | AnkiDroid Kotlin UI (phone companion)                |
 
 ---
 
@@ -164,7 +168,7 @@ reloads during development, run `just web-watch` in a second terminal.
 
 The MCAT readiness panel renders on the deck-browser home page once a deck is
 loaded. Import an MCAT deck (`File → Import`) and review a few cards to see the
-score appear (or the abstain message until 10 reviews exist).
+score appear (or the abstain message until the give-up thresholds are met).
 
 ### Mobile (Android companion)
 
@@ -227,6 +231,7 @@ Key tests:
 ## 7. Status (Wednesday milestone — core works, no AI)
 
 **Done**
+
 - Fork builds and runs from source (desktop) on the MCAT deck.
 - Real Rust engine change (mastery query + honest deck score) with 7 Rust + 4
   Python tests, undo-safe and integrity-checked.
@@ -234,6 +239,7 @@ Key tests:
 - AnkiDroid companion builds and reviews the same deck on the shared engine.
 
 **Not yet (later milestones)**
+
 - AI features (card generation, provenance, evals) — intentionally **off** for
   this milestone.
 - Two-way desktop⇄phone sync and offline conflict handling.

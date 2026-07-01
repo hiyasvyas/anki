@@ -134,6 +134,10 @@ class DeckBrowser:
             set_current_deck(
                 parent=self.mw, deck_id=DeckId(int(arg))
             ).run_in_background()
+        elif cmd == "mcat_set_exam":
+            self._mcat_set_exam_date()
+        elif cmd == "mcat_clear_exam":
+            self._mcat_clear_exam_date()
         return False
 
     def set_current_deck(self, deck_id: DeckId) -> None:
@@ -188,6 +192,7 @@ class DeckBrowser:
         self.web.stdHtml(
             self._v1_upgrade_message(data.sched_upgrade_required)
             + self._render_mcat_panel()
+            + self._render_pace_panel()
             + self._body % content.__dict__,
             css=["css/deckbrowser.css"],
             js=[
@@ -218,10 +223,14 @@ class DeckBrowser:
     # only decides how to *present* it, and when to abstain.
     # A readiness score is shown only when BOTH hold: enough graded cards to
     # estimate a mastery rate, and enough of the exam's topics actually touched.
-    # 50 reviews keeps the 95% Wilson band meaningful (±~0.14 at p=0.5); the 50%
-    # topic gate stops a deck that only drilled one subject from claiming
-    # readiness for the whole exam (see challenge 7c).
-    _MCAT_MIN_REVIEWS = 50
+    # 230 reviews ties the evidence floor to one full-length MCAT (~230 scored
+    # questions), matching the field benchmark that a real readiness signal only
+    # emerges once a student has worked through at least a practice-test's worth
+    # of material; it also tightens the 95% Wilson band to ±~0.065 at p=0.5 (vs
+    # ±~0.14 at 50), so the first score we ever show is already reasonably
+    # precise. The 50% topic gate stops a deck that only drilled one subject from
+    # claiming readiness for the whole exam (see challenge 7c).
+    _MCAT_MIN_REVIEWS = 230
     _MCAT_MIN_TOPIC_COVERAGE = 0.5
 
     def _render_mcat_panel(self) -> str:
@@ -330,7 +339,9 @@ class DeckBrowser:
                     f"({len(topics_reviewed)}/{topic_total} topics), "
                     f"need {pct(self._MCAT_MIN_TOPIC_COVERAGE)}"
                 )
-            return css + f"""
+            return (
+                css
+                + f"""
 <div class="mcat-card">
   <div class="mcat-head">
     <span class="mcat-title">MCAT Readiness</span>
@@ -344,7 +355,9 @@ class DeckBrowser:
   <div class="mcat-note">Mastered = current FSRS recall ≥ {threshold_pct}% ·
    {score.total_cards} cards in deck.</div>
 </div>
-""" + topics_html
+"""
+                + topics_html
+            )
 
         if topic_coverage < 0.60:
             conf = "Low"
@@ -371,7 +384,9 @@ class DeckBrowser:
         upper = max(0.0, min(1.0, score.score_upper))
         point = max(0.0, min(1.0, score.score))
 
-        return css + f"""
+        return (
+            css
+            + f"""
 <div class="mcat-card">
   <div class="mcat-head">
     <span class="mcat-title">MCAT Readiness</span>
@@ -399,7 +414,134 @@ class DeckBrowser:
    Mastered = current FSRS recall ≥ {threshold_pct}% over {score.total_cards} cards.
   </div>
 </div>
-""" + topics_html
+"""
+            + topics_html
+        )
+
+    # Speedrun: Pace Trainer panel (home page)
+    ##########################################################################
+
+    # Ladder targets in ms, mirroring PACE_RUNGS_MS in rslib/src/stats/pace.rs.
+    # Index 0 == unlimited (no timer); the last entry is the 90s goal.
+    _PACE_LADDER_MS = (0, 300_000, 180_000, 120_000, 90_000)
+
+    def _mcat_set_exam_date(self) -> None:
+        """Prompt for the MCAT date and store it (epoch seconds) in the config
+        key the Rust pace model reads. Only sets the ladder's *starting* rung."""
+        import datetime
+
+        text = (
+            getOnlyText("Enter your MCAT exam date (YYYY-MM-DD):", parent=self.mw) or ""
+        ).strip()
+        if not text:
+            return
+        try:
+            day = datetime.datetime.strptime(text, "%Y-%m-%d")
+        except ValueError:
+            showInfo(
+                "Please use the format YYYY-MM-DD, e.g. 2026-01-15.", parent=self.mw
+            )
+            return
+        # Anchor at 09:00 local so the day-count is stable regardless of tz.
+        epoch = int(day.replace(hour=9, minute=0, second=0).timestamp())
+        self.mw.col.set_config("examDate", epoch)
+        self.refresh()
+
+    def _mcat_clear_exam_date(self) -> None:
+        self.mw.col.remove_config("examDate")
+        self.refresh()
+
+    def _render_pace_panel(self) -> str:
+        """Home-page Pace Trainer card driven by the Rust ``mcat_pace`` RPC. Shows
+        the exam-date prompt when unset, then the pace ladder and per-topic
+        target / accuracy / mean-time, sorted weakest-first (the same signal the
+        PaceWeakness review order uses). Fails safe to an empty string so it can
+        never break the deck list."""
+        try:
+            pace = self.mw.col._backend.mcat_pace(search="")
+        except Exception:
+            return ""
+        if not pace.topics:
+            return ""
+
+        def secs(ms: float) -> str:
+            return f"{ms / 1000:.0f}s"
+
+        def target_label(ms: int) -> str:
+            return "unlimited" if ms == 0 else secs(ms)
+
+        goal = target_label(pace.goal_ms)
+        min_acc_pct = f"{pace.min_accuracy * 100:.0f}%"
+
+        css = """
+<style>
+.pace-card{max-width:640px;margin:14px auto 4px;padding:16px 18px;border:1px solid
+ var(--border,rgba(128,128,128,.35));border-radius:12px;text-align:start;
+ background:var(--canvas-elevated,rgba(128,128,128,.06));}
+.pace-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.pace-title{font-weight:700;font-size:15px;}
+.pace-tag{font-size:11px;opacity:.6;}
+.pace-sub{font-size:12px;opacity:.85;margin-top:2px;}
+.pace-btn{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:8px;
+ border:1px solid rgba(70,130,220,.6);cursor:pointer;font-size:12px;font-weight:600;}
+.pace-ttable{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+.pace-ttable th{text-align:start;opacity:.6;font-weight:600;padding:2px 6px;}
+.pace-ttable td{padding:3px 6px;border-top:1px solid rgba(128,128,128,.18);}
+.pace-tname{font-weight:600;}
+.pace-note{font-size:11px;opacity:.7;margin-top:10px;line-height:1.4;}
+.pace-ready{color:rgb(70,160,90);font-weight:700;}
+</style>
+"""
+
+        if pace.exam_months_remaining < 0:
+            exam_html = """
+  <div class="pace-sub">No exam date set — the ladder starts at
+   <b>unlimited</b> until you add one.</div>
+  <div class="pace-btn" onclick='pycmd("mcat_set_exam")'>Set MCAT exam date</div>"""
+        else:
+            start_ms = self._PACE_LADDER_MS[
+                min(pace.start_rung, len(self._PACE_LADDER_MS) - 1)
+            ]
+            exam_html = f"""
+  <div class="pace-sub">Exam in <b>{pace.exam_months_remaining:.1f} months</b>
+   · starting target <b>{target_label(start_ms)}</b> · goal <b>{goal}</b>
+   <span class="pace-tag" style="cursor:pointer"
+    onclick='pycmd("mcat_clear_exam")'>(change)</span></div>"""
+
+        rows = ""
+        for t in sorted(pace.topics, key=lambda t: (-t.weakness, t.topic)):
+            acc = f"{t.accuracy * 100:.0f}%" if t.window_reviews else "—"
+            mean = secs(t.mean_answer_ms) if t.window_reviews else "—"
+            status = html.escape(t.phase)
+            if t.ready_for_next_rung:
+                status += ' <span class="pace-ready">▲ almost</span>'
+            rows += f"""
+    <tr><td class="pace-tname">{html.escape(t.topic)}</td>
+    <td>{t.window_reviews}</td><td>{acc}</td><td>{mean}</td>
+    <td>{target_label(t.target_ms)}</td><td>{status}</td></tr>"""
+
+        return (
+            css
+            + f"""
+<div class="pace-card">
+  <div class="pace-head">
+    <span class="pace-title">Pace Trainer</span>
+    <span class="pace-tag">Rust engine · mcat_pace</span>
+  </div>{exam_html}
+  <table class="pace-ttable">
+    <tr><th>Topic</th><th>Reviews ({pace.window_days}d)</th><th>Accuracy</th>
+     <th>Mean time</th><th>Target</th><th>Phase</th></tr>
+    {rows}
+  </table>
+  <div class="pace-note">Topics are listed weakest/slowest first — the same
+   order the <b>Pace-weakness</b> review order studies them in. A topic only
+   drops to a shorter target after ≥ {pace.min_window_reviews} recent reviews
+   with ≥ {min_acc_pct} accuracy <b>and</b> a mean time already inside the next
+   rung. Measured from answer time Anki already records; FSRS intervals are
+   untouched.</div>
+</div>
+"""
+        )
 
     def _renderDeckTree(self, top: DeckTreeNode) -> str:
         buf = """
