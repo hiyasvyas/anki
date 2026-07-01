@@ -24,8 +24,7 @@ service StatsService {
   // computed in a single pass so it stays fast on large collections.
   rpc McatMastery(McatMasteryRequest) returns (McatMasteryResponse);
   // Speedrun: a single honest deck score for the search, with a confidence
-  // range (uncertainty from unreviewed cards) and a give-up rule (cards with
-  // too many lapses are excluded so the score can't be gamed or tanked).
+  // range whose width comes from how many cards are still unreviewed.
   rpc McatDeckScore(McatDeckScoreRequest) returns (McatDeckScoreResponse);
 }
 
@@ -135,9 +134,9 @@ message McatDeckScoreResponse {
   // whole deck has been reviewed.
   float score_lower = 2;
   float score_upper = 3;
-  // All cards that matched the search.
+  // All cards that matched the search (every card counts toward the score).
   uint32 total_cards = 4;
-  // Cards that count toward the score (total minus given-up cards).
+  // Cards that count toward the score. Equal to total_cards.
   uint32 scorable_cards = 5;
   // Scorable cards that have been reviewed at least once (have memory state).
   uint32 rated_cards = 6;
@@ -145,12 +144,10 @@ message McatDeckScoreResponse {
   uint32 mastered_cards = 7;
   // Scorable cards never reviewed yet (counted, but unproven).
   uint32 unseen_cards = 8;
-  // Cards excluded by the give-up rule: too many lapses and still not mastered.
-  uint32 give_up_cards = 9;
   // Recall cutoff used to decide whether a card counts as mastered.
   float mastered_threshold = 10;
-  // Lapse count at or above which an unmastered card is given up on.
-  uint32 give_up_lapses = 11;
+
+  reserved 9, 11;  // formerly give_up_cards / give_up_lapses (removed)
 }
 
 message GraphsResponse {

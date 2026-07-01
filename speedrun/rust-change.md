@@ -95,13 +95,13 @@ engine; the 3 Rust unit tests for this change pass. Full proof command:
 files were hand-edited — the proto change regenerates the Rust (`anki_proto`),
 Python (`stats_pb2`, `_backend_generated.py`), and TS bindings automatically.
 
-## Honest deck score — range + give-up rule (Challenge: memory model)
+## Honest deck score — point estimate + confidence range (Challenge: memory model)
 
 Building on the same recall path, a second RPC `McatDeckScore(search)` reduces a
-deck to **one number you can defend**, with two pieces of honesty baked in so it
-can neither be gamed nor mistaken for false precision.
+deck to **one number you can defend**, reported as a point estimate with a
+confidence range so it can't be mistaken for false precision.
 
-- **Score** (0–1): the point estimate of true mastery over the *scorable* cards.
+- **Score** (0–1): the point estimate of true mastery over the scorable cards.
   It projects the observed mastery rate (mastered ÷ reviewed) onto cards not yet
   reviewed, so it equals `mastered/scorable` exactly once the deck is fully
   reviewed.
@@ -110,12 +110,11 @@ can neither be gamed nor mistaken for false precision.
   by how much of the deck is still unreviewed — review 5 of 500 cards and the
   band is wide; review everything and it **collapses to a single value**. The
   score refuses to claim precision it hasn't earned.
-- **Give-up rule**: a card that has lapsed `GIVE_UP_LAPSES` (= 8) times and is
-  still not mastered is **excluded** from the score and reported separately as
-  `give_up_cards`. Without this, a few un-learnable leeches would permanently
-  cap the score, tempting you to quietly suspend them (gaming it) or give up on
-  the whole deck. Excluding them *and showing the count* keeps the score both
-  reachable and honest.
+
+The **give-up rule** (when the app shows *no* score at all) lives in the
+presentation layer, not this engine call: the readiness panel abstains until
+there are at least **50 graded reviews and 50% topic coverage**. This RPC always
+returns the raw honest numbers; the UI decides when there is enough to show.
 
 Like the mastery query it is a strictly read-only pass (no write transaction, no
 undo entry, no mutation), so it is inherently undo-safe.
@@ -123,10 +122,9 @@ undo entry, no mutation), so it is inherently undo-safe.
 **Tests** — `rslib/src/stats/deck_score.rs` (4 Rust unit tests):
 `empty_collection_scores_zero_with_no_range`,
 `fully_reviewed_deck_has_exact_score_and_zero_range`,
-`unseen_cards_widen_the_range`, `give_up_cards_are_excluded_but_counted`; plus
-`pylib/tests/test_stats.py::test_mcat_deck_score` end-to-end.
-Run: `cargo test -p anki stats::deck_score` → **4 passed**;
-`tools\ninja check:pytest:pylib` → **124 passed**.
+`unseen_cards_widen_the_range`, `lapsed_unmastered_cards_still_count_against_score`;
+plus `pylib/tests/test_stats.py::test_mcat_deck_score` end-to-end.
+Run: `cargo test -p anki stats::deck_score` → **4 passed**.
 
 ## Ships to the phone too — built and proven on the AnkiDroid build
 
@@ -151,7 +149,7 @@ engine code**. This was not just asserted — it was built and run on a phone
 
    ```
    I DeckPicker$updateDeckList: MCAT-SPEEDRUN McatDeckScore[phone/Rust]
-     score=0.0 range=[0.0,1.0] scorable=2887 rated=0 mastered=0 unseen=2887 giveUp=0
+     score=0.0 range=[0.0,1.0] scorable=2887 rated=0 mastered=0 unseen=2887
    ```
 
    i.e. the honest-deck-score model executed inside `librsdroid.so` on the phone:

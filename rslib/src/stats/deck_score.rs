@@ -3,22 +3,13 @@
 
 //! Speedrun: a single, honest deck score.
 //!
-//! Reduces a search to one number you can defend, with two pieces of honesty
-//! built in:
-//!
-//! 1. **A confidence range, not a false point.** The score projects the
-//!    observed mastery rate (mastered / reviewed) onto cards you have not
-//!    reviewed yet, and reports a 95% Wilson interval around it. The more of
-//!    the deck is still unseen, the wider the range; once every card has been
-//!    reviewed the range collapses to a single exact value. A deck where you
-//!    have reviewed 5 of 500 cards cannot honestly claim a precise score.
-//!
-//! 2. **A give-up rule.** A card that has lapsed [`GIVE_UP_LAPSES`] times and is
-//!    still not mastered is excluded from the score (`give_up_cards`). Without
-//!    this, a handful of un-learnable "leech" cards would permanently cap the
-//!    score, tempting you to either game it (suspend them quietly) or despair.
-//!    Excluding them *and reporting the count* keeps the score both reachable
-//!    and honest.
+//! Reduces a search to one number you can defend, with a **confidence range,
+//! not a false point.** The score projects the observed mastery rate
+//! (mastered / reviewed) onto cards you have not reviewed yet, and reports a
+//! 95% Wilson interval around it. The more of the deck is still unseen, the
+//! wider the range; once every card has been reviewed the range collapses to a
+//! single exact value. A deck where you have reviewed 5 of 500 cards cannot
+//! honestly claim a precise score.
 //!
 //! Like the mastery query, this is a read-only pass over the matched cards and
 //! touches no undo-tracked state, so it is inherently undo-safe.
@@ -30,10 +21,6 @@ use fsrs::FSRS5_DEFAULT_DECAY;
 use super::mastery::MASTERED_RETRIEVABILITY;
 use crate::prelude::*;
 use crate::scheduler::timing::SchedTimingToday;
-
-/// A card that has lapsed this many times and still is not mastered is treated
-/// as "given up on" and excluded from the score.
-pub const GIVE_UP_LAPSES: u32 = 8;
 
 /// z-score for a two-sided 95% confidence interval.
 const WILSON_Z: f64 = 1.96;
@@ -71,7 +58,6 @@ impl Collection {
         let mut rated_cards: u32 = 0;
         let mut mastered_cards: u32 = 0;
         let mut unseen_cards: u32 = 0;
-        let mut give_up_cards: u32 = 0;
 
         for card in &cards {
             let recall = card.memory_state.map(|state| {
@@ -83,13 +69,6 @@ impl Collection {
                 )
             });
             let mastered = recall.map(|r| r >= MASTERED_RETRIEVABILITY).unwrap_or(false);
-
-            // Give-up rule: persistently failing and still not mastered. Such
-            // cards are excluded from the score entirely (but counted).
-            if !mastered && card.lapses >= GIVE_UP_LAPSES {
-                give_up_cards += 1;
-                continue;
-            }
 
             scorable_cards += 1;
             match recall {
@@ -133,9 +112,7 @@ impl Collection {
             rated_cards,
             mastered_cards,
             unseen_cards,
-            give_up_cards,
             mastered_threshold: MASTERED_RETRIEVABILITY,
-            give_up_lapses: GIVE_UP_LAPSES,
         })
     }
 }
@@ -192,7 +169,6 @@ mod test {
         assert_eq!(r.score, 0.0);
         assert_eq!(r.score_lower, 0.0);
         assert_eq!(r.score_upper, 0.0);
-        assert_eq!(r.give_up_lapses, GIVE_UP_LAPSES);
         Ok(())
     }
 
@@ -250,24 +226,27 @@ mod test {
     }
 
     #[test]
-    fn give_up_cards_are_excluded_but_counted() -> Result<()> {
+    fn lapsed_unmastered_cards_still_count_against_score() -> Result<()> {
         let mut col = Collection::new();
         let deck = col.get_or_create_normal_deck("MCAT::Orgo")?.id;
         // One mastered card.
         let good = add_basic_note(&mut col, deck);
         set_card_state(&mut col, good, deck, 1000.0, 0, 0);
-        // One stale, heavily-lapsed card -> given up on.
+        // One stale, heavily-lapsed card that is still not mastered. There is no
+        // give-up rule: it is a scorable, reviewed, unmastered card and so it
+        // honestly drags the score down.
         let leech = add_basic_note(&mut col, deck);
-        set_card_state(&mut col, leech, deck, 0.1, 365, GIVE_UP_LAPSES);
+        set_card_state(&mut col, leech, deck, 0.1, 365, 20);
 
         let r = col.mcat_deck_score("")?;
         assert_eq!(r.total_cards, 2);
-        assert_eq!(r.give_up_cards, 1);
-        assert_eq!(r.scorable_cards, 1);
-        assert_eq!(r.rated_cards, 1);
+        assert_eq!(r.scorable_cards, 2);
+        assert_eq!(r.rated_cards, 2);
         assert_eq!(r.mastered_cards, 1);
-        // The single leech no longer drags the score down to 50%.
-        assert!((r.score - 1.0).abs() < 1e-6);
+        // Every card is reviewed, so the range collapses to an exact 1/2.
+        assert!((r.score - 0.5).abs() < 1e-6);
+        assert!((r.score_lower - 0.5).abs() < 1e-6);
+        assert!((r.score_upper - 0.5).abs() < 1e-6);
         Ok(())
     }
 }

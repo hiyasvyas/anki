@@ -216,7 +216,13 @@ class DeckBrowser:
     # Honesty / give-up thresholds for the home-page readiness display. The
     # mastery + range logic lives in the Rust engine (rslib/src/stats); this
     # only decides how to *present* it, and when to abstain.
-    _MCAT_MIN_REVIEWS = 10  # below this we refuse to show a score
+    # A readiness score is shown only when BOTH hold: enough graded cards to
+    # estimate a mastery rate, and enough of the exam's topics actually touched.
+    # 50 reviews keeps the 95% Wilson band meaningful (±~0.14 at p=0.5); the 50%
+    # topic gate stops a deck that only drilled one subject from claiming
+    # readiness for the whole exam (see challenge 7c).
+    _MCAT_MIN_REVIEWS = 50
+    _MCAT_MIN_TOPIC_COVERAGE = 0.5
 
     def _render_mcat_panel(self) -> str:
         """Home-page readiness card driven entirely by the Rust engine calls
@@ -237,6 +243,11 @@ class DeckBrowser:
         rated = score.rated_cards
         scorable = score.scorable_cards
         coverage = (rated / scorable) if scorable else 0.0
+        # Topic coverage: fraction of topics (decks) with at least one review.
+        topics_with_cards = [t for t in mastery.topics if t.total_cards > 0]
+        topics_reviewed = [t for t in topics_with_cards if t.rated_cards > 0]
+        topic_total = len(topics_with_cards)
+        topic_coverage = (len(topics_reviewed) / topic_total) if topic_total else 0.0
         threshold_pct = round(score.mastered_threshold * 100)
 
         css = """
@@ -303,8 +314,22 @@ class DeckBrowser:
 </div>
 """
 
-        # Honesty rule: refuse a score until there is enough evidence.
-        if rated < self._MCAT_MIN_REVIEWS:
+        # Honesty rule: refuse a score until there is enough evidence on BOTH
+        # axes — enough graded reviews, and enough of the topics touched.
+        enough_reviews = rated >= self._MCAT_MIN_REVIEWS
+        enough_topics = topic_coverage >= self._MCAT_MIN_TOPIC_COVERAGE
+        if not (enough_reviews and enough_topics):
+            reasons = []
+            if not enough_reviews:
+                reasons.append(
+                    f"only <b>{rated}</b> of {self._MCAT_MIN_REVIEWS} needed reviews"
+                )
+            if not enough_topics:
+                reasons.append(
+                    f"only <b>{pct(topic_coverage)}</b> topic coverage "
+                    f"({len(topics_reviewed)}/{topic_total} topics), "
+                    f"need {pct(self._MCAT_MIN_TOPIC_COVERAGE)}"
+                )
             return css + f"""
 <div class="mcat-card">
   <div class="mcat-head">
@@ -313,19 +338,26 @@ class DeckBrowser:
   </div>
   <div class="mcat-abstain">No score yet — not enough data.</div>
   <div class="mcat-sub">Give-up rule: a score is shown only after at least
-   {self._MCAT_MIN_REVIEWS} reviews. You have <b>{rated}</b>.
-   Review some cards and this updates automatically.</div>
+   {self._MCAT_MIN_REVIEWS} graded reviews <b>and</b>
+   {pct(self._MCAT_MIN_TOPIC_COVERAGE)} topic coverage. Missing:
+   {"; ".join(reasons)}. Updates automatically as you review.</div>
   <div class="mcat-note">Mastered = current FSRS recall ≥ {threshold_pct}% ·
    {score.total_cards} cards in deck.</div>
 </div>
 """ + topics_html
 
-        if coverage < 0.25:
-            conf, conf_why = "Low", "you have reviewed only a small slice of the deck"
-        elif coverage < 0.60:
-            conf, conf_why = "Medium", "a good chunk of the deck is still unreviewed"
+        if topic_coverage < 0.60:
+            conf = "Low"
+            conf_why = (
+                f"you have reviewed only {pct(topic_coverage)} of the "
+                f"{topic_total} topics"
+            )
+        elif topic_coverage < 0.85:
+            conf = "Medium"
+            conf_why = f"{pct(topic_coverage)} of topics reviewed, some still untouched"
         else:
-            conf, conf_why = "High", "most of the deck has been reviewed"
+            conf = "High"
+            conf_why = f"{pct(topic_coverage)} of topics reviewed"
 
         # Best next topic to study: lowest average recall among reviewed topics.
         rated_topics = [t for t in mastery.topics if t.rated_cards > 0]
@@ -354,18 +386,17 @@ class DeckBrowser:
   </div>
   <div class="mcat-grid">
     <div>Confidence<b class="mcat-conf">{conf}</b></div>
+    <div>Topics<b>{len(topics_reviewed)} / {topic_total}</b></div>
     <div>Coverage<b>{pct(coverage)}</b></div>
     <div>Reviewed<b>{rated} / {scorable}</b></div>
     <div>Mastered<b>{score.mastered_cards}</b></div>
-    <div>Given up<b>{score.give_up_cards}</b></div>
   </div>
   <div class="mcat-note">
    <b>Why a range?</b> {score.unseen_cards} cards are still unreviewed, so the true
    score is uncertain ({conf_why}). The band is a 95% interval that narrows as you
    review more.<br>
    <b>Best next topic:</b> {best_next}.<br>
-   Mastered = current FSRS recall ≥ {threshold_pct}% · give-up = lapses ≥
-   {score.give_up_lapses} and still not mastered ({score.give_up_cards} excluded).
+   Mastered = current FSRS recall ≥ {threshold_pct}% over {score.total_cards} cards.
   </div>
 </div>
 """ + topics_html

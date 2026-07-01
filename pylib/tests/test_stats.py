@@ -74,12 +74,12 @@ def test_mcat_mastery():
 
 
 def test_mcat_deck_score():
-    # Speedrun: honest deck score (range + give-up rule) over the Rust engine.
+    # Speedrun: honest deck score (point estimate + confidence range) over the
+    # Rust engine.
     col = getEmptyCol()
     empty = col._backend.mcat_deck_score(search="")
     assert empty.total_cards == 0
     assert empty.score == 0.0
-    assert empty.give_up_lapses > 0
 
     # A single brand-new card is unseen: it counts but stays unproven, so the
     # confidence range must be wide (lower clearly below upper).

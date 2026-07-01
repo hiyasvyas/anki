@@ -25,7 +25,7 @@ and never blend them into one flattering number:
 |----------|--------------------|--------|
 | **Memory** | …recall a fact right now? | **Built** — FSRS recall surfaced as an honest, ranged score (this milestone) |
 | **Performance** | …answer a new, exam-style question that uses the fact? | Planned (later milestone) |
-| **Readiness** | …get what score today, and how sure are we? | Partial — a deck-level mastery score with range + give-up rule (this milestone); full section→scale mapping planned |
+| **Readiness** | …get what score today, and how sure are we? | Partial — a deck-level mastery score with range + abstention give-up rule (this milestone); full section→scale mapping planned |
 
 ### Product thesis (from the Brainlift)
 
@@ -47,20 +47,22 @@ and is explicit about every threshold:
 
 - **Mastered** = a card whose *current* FSRS recall is **≥ 90%**
   (`MASTERED_RETRIEVABILITY = 0.9`).
-- **No score shown** until at least **10 reviewed cards** exist
-  (`_MCAT_MIN_REVIEWS = 10`). Below that the panel says
-  *"No score yet — not enough data"* and shows how many reviews you have.
+- **Give-up rule — no score shown** until there are at least **50 graded reviews**
+  (`_MCAT_MIN_REVIEWS = 50`) **and** at least **50% topic coverage**
+  (`_MCAT_MIN_TOPIC_COVERAGE = 0.5`). Below either line the panel says
+  *"No score yet — not enough data"* and names exactly which axis is short.
+  Rationale: at n = 50 the 95% Wilson band is meaningful (±~0.14 at p = 0.5), and
+  the topic gate stops a deck that only drilled one subject from claiming
+  whole-exam readiness.
 - **Range, not a false point.** The score projects the observed mastery rate
   (mastered ÷ reviewed) over not-yet-reviewed cards and reports a **95% Wilson
   interval** (z = 1.96). The more of the deck is unseen, the wider the band; once
   every card is reviewed the range collapses to a single exact value.
-- **Confidence label** from coverage: `< 25%` → Low, `< 60%` → Medium, else High.
-- **Give-up rule for leeches.** A card that has lapsed **≥ 8 times**
-  (`GIVE_UP_LAPSES = 8`) and is still not mastered is **excluded** from the score
-  and **reported separately** (`give_up_cards`) — so a few un-learnable cards
-  can't permanently cap the score or tempt you into gaming it by suspending them.
-- The panel also shows **coverage %**, **reviewed/scorable counts**, **why the
-  range is wide**, and the **best next topic to study** (lowest average recall).
+- **Confidence label** from topic coverage: `< 60%` → Low, `< 85%` → Medium,
+  else High.
+- The panel also shows **topics reviewed/total**, **coverage %**,
+  **reviewed/scorable counts**, **why the range is wide**, and the **best next
+  topic to study** (lowest average recall).
 
 All of this is computed by the engine; the UI only decides how to present it and
 when to abstain.
@@ -79,7 +81,7 @@ decks. A companion RPC reduces a deck to one **honest, ranged score**.
 - `McatMastery(search)` → per-topic `total / rated / mastered / average_recall`,
   plus collection-wide totals and the mastered threshold.
 - `McatDeckScore(search)` → `score` + `score_lower` / `score_upper` (Wilson),
-  `scorable / rated / mastered / unseen / give_up` counts, and the thresholds used.
+  `scorable / rated / mastered / unseen` counts, and the mastered threshold used.
 - `McatEngineStatus()` → a tiny end-to-end pipeline smoke check.
 
 "Recall" reuses Anki's own FSRS path (`current_retrievability_seconds`), the same
@@ -214,7 +216,7 @@ Key tests:
   `groups_by_topic_and_counts_mastery`, `search_filters_topics`.
 - `rslib/src/stats/deck_score.rs`: `empty_collection_scores_zero_with_no_range`,
   `fully_reviewed_deck_has_exact_score_and_zero_range`,
-  `unseen_cards_widen_the_range`, `give_up_cards_are_excluded_but_counted`.
+  `unseen_cards_widen_the_range`, `lapsed_unmastered_cards_still_count_against_score`.
 - `pylib/tests/test_stats.py`: `test_mcat_engine_status`, `test_mcat_mastery`,
   `test_mcat_deck_score`, `test_mcat_queries_are_undo_safe` (proves the RPCs
   create/clear no undo entry, undo of a real action still works, and
