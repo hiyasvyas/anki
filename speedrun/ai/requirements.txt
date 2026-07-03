@@ -1,0 +1,24 @@
+# Speedrun MCAT AI subsystem -- dependencies.
+#
+# IMPORTANT: the OFFLINE pipeline (check/eval/baselines/leakage/paraphrase) runs
+# on the Python standard library ALONE. Every third-party package below is an
+# optional accelerator; if it is missing, the code falls back to a documented
+# pure-Python implementation (see textsim.py) and records which backend it used.
+# So even if this file fails to install, `python -m speedrun.ai.run all` still
+# works on cached artifacts.
+
+# --- Generation (the ONLY step that needs the API key) ---
+# Pinned to a range that supports Python 3.8. Only imported when you run
+# `generate` with ANTHROPIC_API_KEY set.
+anthropic>=0.34,<0.40
+
+# --- Baseline accelerators (optional; pure-Python fallback exists) ---
+# scikit-learn 1.3.x / numpy 1.24.x are the last lines that support Python 3.8.
+numpy>=1.24,<1.25
+scikit-learn>=1.3,<1.4
+
+# --- Optional: real semantic embeddings for the vector baseline ---
+# sentence-transformers pulls in torch and is often impractical on Python 3.8.
+# If it is NOT installed, the vector baseline uses a documented hashing-embedding
+# proxy instead (and the reports say so). Uncomment to try it:
+# sentence-transformers>=2.2,<3.0

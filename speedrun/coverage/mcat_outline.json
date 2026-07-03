@@ -1,0 +1,66 @@
+{
+  "_about": "MCAT content outline (AAMC Foundational Concepts -> Content Categories) used by the coverage map (challenge 7c). CARS is skills-based and has no memorizable content categories, so it is tracked separately and excluded from the content-coverage denominator. VERIFY against the official AAMC outline before relying on exact category wording.",
+  "_citation": "AAMC, 'What's on the MCAT Exam?' content outline (Foundational Concepts and Content Categories). https://students-residents.aamc.org/whats-mcat-exam/whats-mcat-exam",
+  "scale": {"min": 472, "max": 528, "section_min": 118, "section_max": 132},
+  "sections": [
+    {
+      "id": "bb",
+      "name": "Biological and Biochemical Foundations of Living Systems",
+      "skills_based": false,
+      "categories": [
+        {"id": "1A", "title": "Structure and function of proteins and amino acids", "keywords": ["amino acid", "protein", "peptide", "enzyme", "michaelis", "km", "vmax", "inhibitor", "secondary structure", "alpha helix", "beta sheet", "denatur"]},
+        {"id": "1B", "title": "Transmission of genetic information from gene to protein", "keywords": ["dna replication", "semiconservative", "polymerase", "transcription", "translation", "codon", "start codon", "uracil", "mrna", "ribosome", "gene expression"]},
+        {"id": "1C", "title": "Transmission of heritable information and processes that increase genetic diversity", "keywords": ["meiosis", "recombination", "mendel", "genetics", "heritable", "mutation", "evolution", "allele"]},
+        {"id": "1D", "title": "Principles of bioenergetics and fuel molecule metabolism", "keywords": ["cellular respiration", "glycolysis", "atp", "electron transport", "oxidative phosphorylation", "citric acid", "krebs", "metabolism", "glycogen", "bioenergetics", "fermentation"]},
+        {"id": "2A", "title": "Assemblies of molecules, cells, and groups of cells within multicellular organisms", "keywords": ["membrane", "fluid mosaic", "phospholipid", "transport", "sodium-potassium", "diffusion", "osmosis", "tissue", "cell junction"]},
+        {"id": "2B", "title": "Structure, growth, physiology, and genetics of prokaryotes and viruses", "keywords": ["prokaryote", "bacteria", "virus", "bacteriophage", "plasmid", "operon"]},
+        {"id": "2C", "title": "Processes of cell division, differentiation, and specialization", "keywords": ["mitosis", "cell cycle", "differentiation", "stem cell", "apoptosis"]},
+        {"id": "3A", "title": "Structure and functions of the nervous and endocrine systems", "keywords": ["neuron", "action potential", "resting potential", "membrane potential", "saltatory", "synapse", "neurotransmitter", "endocrine", "hormone"]},
+        {"id": "3B", "title": "Structure and integrative functions of the main organ systems", "keywords": ["circulatory", "respiratory", "digestive", "renal", "immune", "muscular", "skeletal", "organ system"]}
+      ]
+    },
+    {
+      "id": "cp",
+      "name": "Chemical and Physical Foundations of Biological Systems",
+      "skills_based": false,
+      "categories": [
+        {"id": "4A", "title": "Translational motion, forces, work, energy, and equilibrium", "keywords": ["newton", "force", "acceleration", "work-energy", "kinetic energy", "momentum", "equilibrium", "torque", "mechanics"]},
+        {"id": "4B", "title": "Importance of fluids for the circulation of blood, gas movement, and gas exchange", "keywords": ["fluid", "pressure", "buoyancy", "bernoulli", "gas exchange", "poiseuille", "viscosity"]},
+        {"id": "4C", "title": "Electrochemistry and electrical circuits and their elements", "keywords": ["ohm", "circuit", "resistance", "voltage", "current", "capacitor", "series", "parallel", "electrochemistry"]},
+        {"id": "4D", "title": "How light and sound interact with matter", "keywords": ["light", "optics", "sound", "wave", "lens", "refraction", "doppler", "spectroscopy"]},
+        {"id": "4E", "title": "Atoms, nuclear decay, electronic structure, and atomic chemical behavior", "keywords": ["atom", "electron configuration", "periodic", "nuclear decay", "isotope", "quantum"]},
+        {"id": "5A", "title": "Unique nature of water and its solutions", "keywords": ["ph", "acid", "base", "buffer", "pka", "conjugate", "solubility", "titration", "water"]},
+        {"id": "5B", "title": "Nature of molecules and intermolecular interactions", "keywords": ["bond", "intermolecular", "hydrogen bond", "polarity", "vsepr", "hybridization"]},
+        {"id": "5C", "title": "Separation and purification methods", "keywords": ["chromatography", "distillation", "extraction", "electrophoresis", "separation"]},
+        {"id": "5D", "title": "Structure, function, and reactivity of biologically relevant molecules", "keywords": ["organic", "chiral", "stereocenter", "carbonyl", "sn1", "sn2", "functional group", "carbohydrate", "glycosidic", "lipid", "nucleotide"]},
+        {"id": "5E", "title": "Principles of chemical thermodynamics and kinetics", "keywords": ["thermodynamics", "gibbs", "enthalpy", "entropy", "spontaneous", "exothermic", "kinetics", "rate", "gas law", "ideal gas", "boyle", "dalton"]}
+      ]
+    },
+    {
+      "id": "ps",
+      "name": "Psychological, Social, and Biological Foundations of Behavior",
+      "skills_based": false,
+      "categories": [
+        {"id": "6A", "title": "Sensing the environment", "keywords": ["sensation", "perception", "sensory", "vision", "hearing", "threshold", "signal detection"]},
+        {"id": "6B", "title": "Making sense of the environment", "keywords": ["memory", "encoding", "retrieval", "long-term potentiation", "attention", "cognition", "problem solving", "encoding specificity"]},
+        {"id": "6C", "title": "Responding to the world", "keywords": ["emotion", "stress", "motivation", "arousal"]},
+        {"id": "7A", "title": "Individual influences on behavior", "keywords": ["conditioning", "classical conditioning", "operant", "reinforcement", "learning", "pavlov", "variable-ratio", "behaviorism"]},
+        {"id": "7B", "title": "Social processes that influence human behavior", "keywords": ["group", "conformity", "socialization", "social influence", "bystander"]},
+        {"id": "7C", "title": "Attitude and behavior change", "keywords": ["attitude", "persuasion", "cognitive dissonance", "elaboration likelihood"]},
+        {"id": "8A", "title": "Self-identity", "keywords": ["self-concept", "identity", "self-esteem", "self-efficacy"]},
+        {"id": "8B", "title": "Social thinking", "keywords": ["attribution", "stereotype", "prejudice", "bias", "social perception"]},
+        {"id": "8C", "title": "Social interactions", "keywords": ["attraction", "aggression", "altruism", "group dynamics"]},
+        {"id": "9A", "title": "Understanding social structure", "keywords": ["social institution", "culture", "socioeconomic", "social structure"]},
+        {"id": "9B", "title": "Demographic characteristics and processes", "keywords": ["demographic", "population", "migration", "urbanization"]},
+        {"id": "10A", "title": "Social inequality", "keywords": ["inequality", "discrimination", "social class", "health disparities"]}
+      ]
+    },
+    {
+      "id": "cars",
+      "name": "Critical Analysis and Reasoning Skills",
+      "skills_based": true,
+      "note": "Skills-based (reading passages); no memorizable content categories. Tracked as passage-practice presence, not content coverage, and excluded from the content-coverage denominator.",
+      "categories": []
+    }
+  ]
+}

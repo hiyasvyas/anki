@@ -1,0 +1,21 @@
+{
+  "citation": "SEED PLACEHOLDER -- Lehninger Principles of Biochemistry / OpenStax (general reference). Replace/augment with the user's AAMC content.",
+  "url": "https://openstax.org/details/books/biology-2e",
+  "_seed_placeholder": true,
+  "units": [
+    {
+      "source_id": "biochem-aminoacids",
+      "topic": "Biochemistry::Amino Acids and Proteins",
+      "citation": "Lehninger Principles of Biochemistry, Ch. 3 Amino Acids, Peptides, and Proteins",
+      "url": "https://en.wikipedia.org/wiki/Protein_structure",
+      "text": "Proteins are polymers of twenty standard amino acids, each with an amino group, a carboxyl group, a hydrogen, and a distinctive side chain bonded to a central alpha carbon. Amino acids link through peptide bonds, which are amide bonds formed by a condensation reaction that releases water. Protein structure has four levels: the primary structure is the linear sequence of amino acids; the secondary structure includes alpha helices and beta sheets stabilized by hydrogen bonds along the backbone; the tertiary structure is the overall three-dimensional fold stabilized by side-chain interactions including disulfide bonds, hydrophobic interactions, and hydrogen bonds; and the quaternary structure is the assembly of multiple polypeptide subunits. Denaturation disrupts these interactions and unfolds the protein, abolishing function without breaking peptide bonds."
+    },
+    {
+      "source_id": "biochem-carbs",
+      "topic": "Biochemistry::Carbohydrates",
+      "citation": "Lehninger Principles of Biochemistry, Ch. 7 Carbohydrates and Glycobiology",
+      "url": "https://en.wikipedia.org/wiki/Carbohydrate",
+      "text": "Carbohydrates are classified by size into monosaccharides, disaccharides, and polysaccharides. Glucose is an aldohexose and the primary fuel for cellular metabolism. Monosaccharides join through glycosidic bonds formed by dehydration synthesis; sucrose is glucose linked to fructose, and lactose is glucose linked to galactose. Storage polysaccharides include starch in plants and glycogen in animals, both polymers of glucose joined mainly by alpha glycosidic linkages that are easily broken down for energy. Structural polysaccharides include cellulose, a polymer of glucose joined by beta glycosidic linkages that most animals cannot digest. Sugars that can act as reducing agents because of a free anomeric carbon are called reducing sugars."
+    }
+  ]
+}

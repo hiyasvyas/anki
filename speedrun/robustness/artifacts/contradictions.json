@@ -1,0 +1,15 @@
+{
+  "declared_cutoffs": {
+    "front_similarity_min": 0.8,
+    "answer_difference_max": 0.4
+  },
+  "source": "Anki collection (C:\\Users\\sunee\\AppData\\Roaming\\Anki2\\User 1\\collection.anki2)",
+  "meta": {
+    "notes_total": 2939,
+    "notes_scanned": 56,
+    "skipped_cloze": 2882,
+    "skipped_boilerplate": 1
+  },
+  "contradictions_found": 0,
+  "pairs": []
+}

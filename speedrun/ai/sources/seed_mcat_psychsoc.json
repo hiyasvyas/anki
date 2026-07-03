@@ -1,0 +1,21 @@
+{
+  "citation": "SEED PLACEHOLDER -- OpenStax Psychology 2e (general reference). Replace/augment with the user's Khan Academy MCAT Psych/Soc content.",
+  "url": "https://openstax.org/details/books/psychology-2e",
+  "_seed_placeholder": true,
+  "units": [
+    {
+      "source_id": "psych-memory",
+      "topic": "Psychology::Memory",
+      "citation": "OpenStax Psychology 2e, Ch. 8 Memory",
+      "url": "https://openstax.org/details/books/psychology-2e",
+      "text": "Memory involves three processes: encoding, the input of information into the memory system; storage, the retention of that information over time; and retrieval, getting information back out when it is needed. The Atkinson-Shiffrin model describes three stores: sensory memory, short-term memory, and long-term memory. Short-term or working memory holds a limited amount of information for a brief period and can be extended through rehearsal. Long-term potentiation, a persistent strengthening of synapses based on recent patterns of activity, is considered a cellular basis of learning and long-term memory. Retrieval is more successful when cues present at encoding are also present at recall, a principle called encoding specificity. Crucially, the ability to recognize or recall stored material is not the same as the ability to use it flexibly in a new context, which is why transfer of learning must be tested separately from simple recall."
+    },
+    {
+      "source_id": "psych-conditioning",
+      "topic": "Psychology::Learning",
+      "citation": "OpenStax Psychology 2e, Ch. 6 Learning",
+      "url": "https://openstax.org/details/books/psychology-2e",
+      "text": "Classical conditioning is a form of associative learning in which a neutral stimulus becomes associated with a naturally occurring stimulus. In Pavlov's experiments an unconditioned stimulus such as food naturally elicits an unconditioned response of salivation; after repeated pairing with a neutral stimulus such as a bell, the bell becomes a conditioned stimulus that elicits a conditioned response. Operant conditioning, described by B. F. Skinner, changes behavior through consequences: reinforcement increases the likelihood of a behavior while punishment decreases it. Positive means a stimulus is added and negative means a stimulus is removed, so negative reinforcement strengthens behavior by removing an unpleasant stimulus. Behaviors reinforced on a variable-ratio schedule, where reinforcement follows an unpredictable number of responses, are the most resistant to extinction."
+    }
+  ]
+}

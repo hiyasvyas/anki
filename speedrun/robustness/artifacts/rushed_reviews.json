@@ -1,0 +1,13 @@
+{
+  "declared_cutoffs": {
+    "min_honest_ms": 800,
+    "readiness_min_reviews": 230
+  },
+  "source": "Anki collection (C:\\Users\\sunee\\AppData\\Roaming\\Anki2\\User 1\\collection.anki2)",
+  "graded_reviews": 65,
+  "rushed_reviews": 0,
+  "rushed_rate": 0.0,
+  "honest_graded_reviews": 65,
+  "meets_readiness_floor_raw": false,
+  "meets_readiness_floor_honest": false
+}

@@ -1,0 +1,237 @@
+{
+  "declared_threshold": 0.5,
+  "topic_source": "Anki collection (C:\\Users\\sunee\\AppData\\Roaming\\Anki2\\User 1\\collection.anki2)",
+  "collection_meta": {
+    "decks_with_cards": 7,
+    "notes": 2884
+  },
+  "show_score": true,
+  "overall_covered": 26,
+  "overall_total": 31,
+  "overall_fraction": 0.8387096774193549,
+  "sections": [
+    {
+      "id": "bb",
+      "name": "Biological and Biochemical Foundations of Living Systems",
+      "skills_based": false,
+      "covered": 9,
+      "total": 9,
+      "fraction": 1.0,
+      "categories": [
+        {
+          "id": "1A",
+          "title": "Structure and function of proteins and amino acids",
+          "covered": true,
+          "matched_keyword": "protein"
+        },
+        {
+          "id": "1B",
+          "title": "Transmission of genetic information from gene to protein",
+          "covered": true,
+          "matched_keyword": "transcription"
+        },
+        {
+          "id": "1C",
+          "title": "Transmission of heritable information and processes that increase genetic diversity",
+          "covered": true,
+          "matched_keyword": "meiosis"
+        },
+        {
+          "id": "1D",
+          "title": "Principles of bioenergetics and fuel molecule metabolism",
+          "covered": true,
+          "matched_keyword": "glycolysis"
+        },
+        {
+          "id": "2A",
+          "title": "Assemblies of molecules, cells, and groups of cells within multicellular organisms",
+          "covered": true,
+          "matched_keyword": "tissue"
+        },
+        {
+          "id": "2B",
+          "title": "Structure, growth, physiology, and genetics of prokaryotes and viruses",
+          "covered": true,
+          "matched_keyword": "virus"
+        },
+        {
+          "id": "2C",
+          "title": "Processes of cell division, differentiation, and specialization",
+          "covered": true,
+          "matched_keyword": "mitosis"
+        },
+        {
+          "id": "3A",
+          "title": "Structure and functions of the nervous and endocrine systems",
+          "covered": true,
+          "matched_keyword": "synapse"
+        },
+        {
+          "id": "3B",
+          "title": "Structure and integrative functions of the main organ systems",
+          "covered": true,
+          "matched_keyword": "respiratory"
+        }
+      ]
+    },
+    {
+      "id": "cp",
+      "name": "Chemical and Physical Foundations of Biological Systems",
+      "skills_based": false,
+      "covered": 10,
+      "total": 10,
+      "fraction": 1.0,
+      "categories": [
+        {
+          "id": "4A",
+          "title": "Translational motion, forces, work, energy, and equilibrium",
+          "covered": true,
+          "matched_keyword": "equilibrium"
+        },
+        {
+          "id": "4B",
+          "title": "Importance of fluids for the circulation of blood, gas movement, and gas exchange",
+          "covered": true,
+          "matched_keyword": "fluid"
+        },
+        {
+          "id": "4C",
+          "title": "Electrochemistry and electrical circuits and their elements",
+          "covered": true,
+          "matched_keyword": "circuit"
+        },
+        {
+          "id": "4D",
+          "title": "How light and sound interact with matter",
+          "covered": true,
+          "matched_keyword": "light"
+        },
+        {
+          "id": "4E",
+          "title": "Atoms, nuclear decay, electronic structure, and atomic chemical behavior",
+          "covered": true,
+          "matched_keyword": "atom"
+        },
+        {
+          "id": "5A",
+          "title": "Unique nature of water and its solutions",
+          "covered": true,
+          "matched_keyword": "acid"
+        },
+        {
+          "id": "5B",
+          "title": "Nature of molecules and intermolecular interactions",
+          "covered": true,
+          "matched_keyword": "bond"
+        },
+        {
+          "id": "5C",
+          "title": "Separation and purification methods",
+          "covered": true,
+          "matched_keyword": "separation"
+        },
+        {
+          "id": "5D",
+          "title": "Structure, function, and reactivity of biologically relevant molecules",
+          "covered": true,
+          "matched_keyword": "organic"
+        },
+        {
+          "id": "5E",
+          "title": "Principles of chemical thermodynamics and kinetics",
+          "covered": true,
+          "matched_keyword": "thermodynamics"
+        }
+      ]
+    },
+    {
+      "id": "ps",
+      "name": "Psychological, Social, and Biological Foundations of Behavior",
+      "skills_based": false,
+      "covered": 7,
+      "total": 12,
+      "fraction": 0.5833333333333334,
+      "categories": [
+        {
+          "id": "6A",
+          "title": "Sensing the environment",
+          "covered": true,
+          "matched_keyword": "sensation"
+        },
+        {
+          "id": "6B",
+          "title": "Making sense of the environment",
+          "covered": true,
+          "matched_keyword": "memory"
+        },
+        {
+          "id": "6C",
+          "title": "Responding to the world",
+          "covered": true,
+          "matched_keyword": "emotion"
+        },
+        {
+          "id": "7A",
+          "title": "Individual influences on behavior",
+          "covered": true,
+          "matched_keyword": "learning"
+        },
+        {
+          "id": "7B",
+          "title": "Social processes that influence human behavior",
+          "covered": true,
+          "matched_keyword": "socialization"
+        },
+        {
+          "id": "7C",
+          "title": "Attitude and behavior change",
+          "covered": true,
+          "matched_keyword": "attitude"
+        },
+        {
+          "id": "8A",
+          "title": "Self-identity",
+          "covered": true,
+          "matched_keyword": "identity"
+        },
+        {
+          "id": "8B",
+          "title": "Social thinking",
+          "covered": false,
+          "matched_keyword": null
+        },
+        {
+          "id": "8C",
+          "title": "Social interactions",
+          "covered": false,
+          "matched_keyword": null
+        },
+        {
+          "id": "9A",
+          "title": "Understanding social structure",
+          "covered": false,
+          "matched_keyword": null
+        },
+        {
+          "id": "9B",
+          "title": "Demographic characteristics and processes",
+          "covered": false,
+          "matched_keyword": null
+        },
+        {
+          "id": "10A",
+          "title": "Social inequality",
+          "covered": false,
+          "matched_keyword": null
+        }
+      ]
+    },
+    {
+      "id": "cars",
+      "name": "Critical Analysis and Reasoning Skills",
+      "skills_based": true,
+      "passage_practice_detected": false,
+      "categories": []
+    }
+  ]
+}

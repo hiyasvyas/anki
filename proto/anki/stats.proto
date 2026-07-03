@@ -31,6 +31,17 @@ service StatsService {
   // pace-ladder target it has earned, plus the weakness score used to order
   // study. This is the read side of the pace-weakness review order.
   rpc McatPace(McatPaceRequest) returns (McatPaceResponse);
+  // Speedrun: the memory->performance bridge. Discounts the honest memory
+  // score by a measured transfer factor to estimate expected accuracy on new
+  // exam-style questions, with a confidence range. When no transfer factor has
+  // been measured yet, performance is shown equal to memory (the honest
+  // default) rather than inventing a discount.
+  rpc McatPerformance(McatPerformanceRequest) returns (McatPerformanceResponse);
+  // Speedrun: a projected MCAT score on the real 472-528 scale, with a range,
+  // confidence, and reasons. Implements the give-up rule in the engine (so the
+  // phone follows the same rule): a score is only shown once there is enough
+  // graded-review evidence and topic coverage.
+  rpc McatReadiness(McatReadinessRequest) returns (McatReadinessResponse);
 }
 
 // Implicitly includes any of the above methods that are not listed in the
@@ -197,6 +208,86 @@ message McatPaceResponse {
   uint32 start_rung = 6;
   // Recent-window length in days.
   uint32 window_days = 7;
+}
+
+message McatPerformanceRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+message McatPerformanceResponse {
+  // Expected exam performance for a single topic (deck).
+  message TopicPerformance {
+    int64 deck_id = 1;
+    // Human-readable deck name, e.g. "MCAT::Biochemistry".
+    string topic = 2;
+    // Mean FSRS recall (0-1) over this topic's rated cards.
+    float memory_recall = 3;
+    // memory_recall discounted by the transfer factor (0-1).
+    float performance = 4;
+    // Range on `performance`, from the transfer-factor bounds.
+    float perf_lower = 5;
+    float perf_upper = 6;
+    // Cards with an FSRS memory state (reviewed at least once).
+    uint32 rated_cards = 7;
+    // All cards in this topic that matched the search.
+    uint32 total_cards = 8;
+  }
+  repeated TopicPerformance topics = 1;
+  // Overall expected performance (0-1): memory score discounted by the
+  // transfer factor.
+  float performance = 2;
+  // Range on overall `performance`, from the memory Wilson bounds combined
+  // with the transfer-factor bounds.
+  float perf_lower = 3;
+  float perf_upper = 4;
+  // Measured memory->performance transfer factor actually applied (0-1).
+  float transfer_factor = 5;
+  // Bounds on the transfer factor.
+  float transfer_factor_lower = 6;
+  float transfer_factor_upper = 7;
+  // False when no transfer factor has been measured yet; in that case the
+  // factor defaults to 1.0 and performance is shown equal to memory.
+  bool transfer_measured = 8;
+  // Cards reviewed at least once across the search.
+  uint32 rated_cards = 9;
+  // Cards that count toward the score across the search.
+  uint32 scorable_cards = 10;
+}
+
+message McatReadinessRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+message McatReadinessResponse {
+  // True only when the give-up rule passes (enough graded reviews AND enough
+  // topic coverage); when false, only the evidence fields below are meaningful.
+  bool has_score = 1;
+  // Projected MCAT score on the 472-528 scale.
+  float projected_score = 2;
+  // Range on `projected_score`, mapped from the performance bounds.
+  float score_lower = 3;
+  float score_upper = 4;
+  // Endpoints of the real MCAT scale.
+  float scale_min = 5;
+  float scale_max = 6;
+  // Overall expected performance (0-1) the projection is built from.
+  float performance = 7;
+  // Fraction of topics (decks with cards) that have >=1 rated card.
+  float topic_coverage = 8;
+  // Count of real review-kind revlog entries for the searched cards.
+  uint32 graded_reviews = 9;
+  // Minimum graded reviews required before a score is shown.
+  uint32 min_graded_reviews = 10;
+  // Minimum topic coverage required before a score is shown.
+  float min_topic_coverage = 11;
+  // Confidence label derived from topic coverage: "Low"/"Medium"/"High".
+  string confidence = 12;
+  // Human-readable drivers / missing data behind the verdict.
+  repeated string reasons = 13;
+  // Unix seconds when this readiness snapshot was computed.
+  int64 updated_at = 14;
 }
 
 message GraphsResponse {

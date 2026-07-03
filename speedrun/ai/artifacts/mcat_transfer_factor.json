@@ -1,0 +1,9 @@
+{
+  "mcatTransferFactor": 0.7963,
+  "lower": 0.6581,
+  "upper": 0.9055,
+  "n": 60,
+  "measured": false,
+  "safe_to_set_config": false,
+  "source": "attempts_sample.json (ILLUSTRATIVE synthetic)"
+}

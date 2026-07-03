@@ -1448,6 +1448,14 @@ title="{}" {}>{}</button>""".format(
         qconnect(m.action_check_for_updates.triggered, self.on_check_for_updates)
         qconnect(m.actionPreferences.triggered, self.onPrefs)
 
+        # Tools: Speedrun AI Practice Generator on/off toggle.
+        self.action_mcat_ai = QAction(self)
+        self.action_mcat_ai.setText("AI Practice Generator")
+        self.action_mcat_ai.setCheckable(True)
+        m.menuTools.addAction(self.action_mcat_ai)
+        qconnect(self.action_mcat_ai.toggled, self._on_toggle_mcat_ai)
+        qconnect(m.menuTools.aboutToShow, self._sync_mcat_ai_action)
+
         # View
         qconnect(
             m.actionZoomIn.triggered,
@@ -1464,6 +1472,31 @@ title="{}" {}>{}</button>""".format(
             QKeySequence("F11") if is_lin else QKeySequence.StandardKey.FullScreen
         )
         m.actionFullScreen.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+
+    def _sync_mcat_ai_action(self) -> None:
+        """Reflect the stored AI on/off flag in the Tools menu checkbox."""
+        if self.col is None:
+            return
+        try:
+            import aqt.mcat_ai
+
+            self.action_mcat_ai.blockSignals(True)
+            self.action_mcat_ai.setChecked(aqt.mcat_ai.ai_enabled(self.col))
+            self.action_mcat_ai.blockSignals(False)
+        except Exception:
+            pass
+
+    def _on_toggle_mcat_ai(self, checked: bool) -> None:
+        """Persist the AI on/off flag and refresh the home page."""
+        if self.col is None:
+            return
+        try:
+            import aqt.mcat_ai
+
+            self.col.set_config(aqt.mcat_ai.AI_ENABLED_KEY, bool(checked))
+            self.deckBrowser.refresh()
+        except Exception:
+            pass
 
     def updateTitleBar(self) -> None:
         self.setWindowTitle("Anki")

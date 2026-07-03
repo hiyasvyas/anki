@@ -1,0 +1,10 @@
+{
+  "no_lost_or_double_counted": true,
+  "distinct_reviews": 18,
+  "expected_reviews": 18,
+  "idempotent_after_interrupt_and_retry": true,
+  "conflict_both_rows_kept": true,
+  "conflict_winner_by_mtime_ease": 4,
+  "conflict_winner_by_id_ease": 4,
+  "clock_skew_ms": 172800000
+}

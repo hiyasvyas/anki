@@ -16,17 +16,20 @@ The server is Anki's built-in one, launched from this build:
 $env:PYTHONPATH = "<repo>\out\pylib"
 $env:SYNC_USER1 = "hiya:mcat123"      # the only account; no signup anywhere
 $env:SYNC_HOST  = "0.0.0.0"
-$env:SYNC_PORT  = "8080"
+$env:SYNC_PORT  = "8090"              # NOT 8080: the dev desktop app runs its
+                                      # Chromium web-debugger on 127.0.0.1:8080,
+                                      # which would shadow the sync server on
+                                      # loopback (and via the emulator's 10.0.2.2).
 $env:SYNC_BASE  = "<data dir>"        # server stores each user's collection+media here
 out\pyenv\Scripts\python.exe -m anki.syncserver
-# -> INFO listening addr=0.0.0.0:8080 ; GET /health returns 200
+# -> INFO listening addr=0.0.0.0:8090
 ```
 
 Client config (log in as `hiya` / `mcat123`, no AnkiWeb):
 
-- **Desktop**: Preferences → Syncing → self-hosted server `http://127.0.0.1:8080/`.
+- **Desktop**: Preferences → Syncing → self-hosted server `http://127.0.0.1:8090/`.
 - **AnkiDroid (emulator)**: Settings → Sync → custom sync server
-  `http://10.0.2.2:8080/` (`10.0.2.2` is the AVD's alias for the host loopback).
+  `http://10.0.2.2:8090/` (`10.0.2.2` is the AVD's alias for the host loopback).
 
 Because the server, the desktop client, and the AnkiDroid build are all produced
 from the **same 26.05 engine tree**, the sync protocol versions match exactly.

@@ -1,0 +1,14 @@
+{
+  "factor": 0.7963,
+  "lower": 0.6581,
+  "upper": 0.9055,
+  "n": 60,
+  "measured": false,
+  "source": "attempts_sample.json (ILLUSTRATIVE synthetic)",
+  "recall_mean": 0.9,
+  "transfer_accuracy": 0.7167,
+  "gap": 0.1833,
+  "n_cards": 30,
+  "config_key": "mcatTransferFactor",
+  "note": "transfer_factor = transfer_accuracy / recall_mean; gap = recall_mean - transfer_accuracy. Set the Anki config key 'mcatTransferFactor' to 'factor' ONLY for a measured=true run."
+}

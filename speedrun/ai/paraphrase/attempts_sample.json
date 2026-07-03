@@ -1,0 +1,42 @@
+{
+  "_sample": true,
+  "_about": "ILLUSTRATIVE SYNTHETIC attempts so the 7d harness runs end-to-end today. These are NOT real student responses and NOT a measurement. A run using this file is marked measured=false and MUST NOT be used to set the Anki config key mcatTransferFactor. Replace with real attempts (the app logs card recall from FSRS and correctness on the reworded questions) to obtain a measured factor.",
+  "card_recall": {
+    "g01": 1, "g02": 1, "g03": 1, "g04": 1, "g05": 1, "g06": 1, "g07": 1, "g08": 1,
+    "g09": 1, "g10": 1, "g11": 1, "g12": 1, "g13": 0, "g14": 1, "g15": 1, "g16": 1,
+    "g17": 1, "g18": 1, "g19": 1, "g20": 1, "g21": 1, "g22": 0, "g23": 1, "g24": 1,
+    "g25": 1, "g26": 0, "g27": 1, "g28": 1, "g29": 1, "g30": 1
+  },
+  "reworded_correct": {
+    "g01-r1": 1, "g01-r2": 0,
+    "g02-r1": 1, "g02-r2": 1,
+    "g03-r1": 1, "g03-r2": 0,
+    "g04-r1": 1, "g04-r2": 1,
+    "g05-r1": 1, "g05-r2": 0,
+    "g06-r1": 1, "g06-r2": 1,
+    "g07-r1": 1, "g07-r2": 0,
+    "g08-r1": 1, "g08-r2": 1,
+    "g09-r1": 1, "g09-r2": 0,
+    "g10-r1": 1, "g10-r2": 1,
+    "g11-r1": 1, "g11-r2": 0,
+    "g12-r1": 1, "g12-r2": 1,
+    "g13-r1": 0, "g13-r2": 0,
+    "g14-r1": 1, "g14-r2": 1,
+    "g15-r1": 1, "g15-r2": 0,
+    "g16-r1": 1, "g16-r2": 1,
+    "g17-r1": 1, "g17-r2": 0,
+    "g18-r1": 1, "g18-r2": 1,
+    "g19-r1": 1, "g19-r2": 0,
+    "g20-r1": 1, "g20-r2": 1,
+    "g21-r1": 1, "g21-r2": 1,
+    "g22-r1": 0, "g22-r2": 1,
+    "g23-r1": 1, "g23-r2": 1,
+    "g24-r1": 1, "g24-r2": 0,
+    "g25-r1": 1, "g25-r2": 1,
+    "g26-r1": 0, "g26-r2": 0,
+    "g27-r1": 1, "g27-r2": 1,
+    "g28-r1": 1, "g28-r2": 0,
+    "g29-r1": 1, "g29-r2": 1,
+    "g30-r1": 1, "g30-r2": 0
+  }
+}

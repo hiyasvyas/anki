@@ -1,0 +1,49 @@
+{
+  "citation": "SEED PLACEHOLDER -- OpenStax Chemistry 2e and OpenStax University Physics (general references). Replace/augment with the user's AAMC content.",
+  "url": "https://openstax.org/subjects/science",
+  "_seed_placeholder": true,
+  "units": [
+    {
+      "source_id": "chem-acidbase",
+      "topic": "Chemistry::Acids and Bases",
+      "citation": "OpenStax Chemistry 2e, Ch. 14 Acid-Base Equilibria",
+      "url": "https://openstax.org/details/books/chemistry-2e",
+      "text": "In aqueous solution, pH equals the negative base-ten logarithm of the hydrogen ion concentration, and pH plus pOH equals fourteen at twenty-five degrees Celsius. A strong acid such as hydrochloric acid dissociates completely, while a weak acid only partially dissociates and is characterized by its acid dissociation constant Ka; a larger Ka, or equivalently a smaller pKa, indicates a stronger acid. A buffer resists changes in pH and consists of a weak acid and its conjugate base. The Henderson-Hasselbalch equation states that pH equals pKa plus the logarithm of the ratio of conjugate base to weak acid, so a buffer works best when pH is near its pKa and the concentrations of the acid and conjugate base are approximately equal."
+    },
+    {
+      "source_id": "chem-thermo",
+      "topic": "Chemistry::Thermodynamics",
+      "citation": "OpenStax Chemistry 2e, Ch. 16 Thermodynamics",
+      "url": "https://openstax.org/details/books/chemistry-2e",
+      "text": "Enthalpy change is the heat absorbed or released at constant pressure; an exothermic reaction releases heat and has a negative enthalpy change, while an endothermic reaction absorbs heat. Entropy is a measure of disorder or the dispersal of energy, and it tends to increase in spontaneous processes. The Gibbs free energy change equals the enthalpy change minus temperature times the entropy change. A reaction is spontaneous when the Gibbs free energy change is negative, at equilibrium when it is zero, and nonspontaneous when it is positive. A reaction that is both exothermic and increases entropy is spontaneous at all temperatures, whereas the sign of temperature-dependent cases can flip as temperature changes."
+    },
+    {
+      "source_id": "chem-gaslaws",
+      "topic": "Chemistry::Gases",
+      "citation": "OpenStax Chemistry 2e, Ch. 9 Gases",
+      "url": "https://openstax.org/details/books/chemistry-2e",
+      "text": "The ideal gas law states that pressure times volume equals the number of moles times the gas constant times absolute temperature. At constant temperature, pressure and volume are inversely proportional, which is Boyle's law, while at constant pressure volume is directly proportional to absolute temperature, which is Charles's law. Kinetic molecular theory models gas particles as having negligible volume and no intermolecular forces, with average kinetic energy proportional to absolute temperature. Dalton's law of partial pressures states that the total pressure of a gas mixture is the sum of the partial pressures of its components. Real gases deviate from ideal behavior at high pressure and low temperature, where molecular volume and attractions become significant."
+    },
+    {
+      "source_id": "orgo-functional",
+      "topic": "Organic Chemistry::Structure and Reactions",
+      "citation": "OpenStax Organic Chemistry / Klein Organic Chemistry (general reference)",
+      "url": "https://en.wikipedia.org/wiki/Functional_group",
+      "text": "Functional groups determine the chemical behavior of organic molecules. A carbonyl group is a carbon double-bonded to oxygen and appears in aldehydes, ketones, carboxylic acids, esters, and amides. A hydroxyl group defines alcohols. A chiral center, or stereocenter, is a carbon bonded to four different groups, and molecules that are nonsuperimposable mirror images are enantiomers. In nucleophilic substitution, an SN2 reaction is a one-step concerted mechanism that is second order overall and proceeds with inversion of configuration, favored by strong nucleophiles and unhindered primary substrates. An SN1 reaction is a two-step mechanism that is first order, proceeds through a carbocation intermediate, and is favored by tertiary substrates and polar protic solvents, giving a racemic mixture."
+    },
+    {
+      "source_id": "phys-mechanics",
+      "topic": "Physics::Mechanics",
+      "citation": "OpenStax University Physics Vol. 1, Newton's Laws and Work-Energy",
+      "url": "https://openstax.org/details/books/university-physics-volume-1",
+      "text": "Newton's first law states that an object remains at rest or in uniform motion unless acted on by a net external force, an idea known as inertia. Newton's second law states that the net force on an object equals its mass times its acceleration. Newton's third law states that for every action force there is an equal and opposite reaction force on a different object. Work equals force times displacement times the cosine of the angle between them, and the work-energy theorem states that the net work done on an object equals its change in kinetic energy. Kinetic energy equals one half mass times velocity squared. In the absence of nonconservative forces such as friction, the total mechanical energy, the sum of kinetic and potential energy, is conserved."
+    },
+    {
+      "source_id": "phys-circuits",
+      "topic": "Physics::Circuits",
+      "citation": "OpenStax University Physics Vol. 2, Direct-Current Circuits",
+      "url": "https://openstax.org/details/books/university-physics-volume-2",
+      "text": "Ohm's law states that the voltage across a resistor equals the current through it times its resistance. Electrical power dissipated equals voltage times current, which can also be written as current squared times resistance. In a series circuit the same current flows through every element and the total resistance is the sum of the individual resistances, so resistors in series add directly. In a parallel circuit the voltage across each branch is the same and the reciprocal of the total resistance equals the sum of the reciprocals of the individual resistances, so the equivalent resistance is always less than the smallest branch resistance. Adding resistors in parallel therefore decreases total resistance and increases total current drawn from the source."
+    }
+  ]
+}

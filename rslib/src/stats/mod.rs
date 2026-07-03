@@ -6,6 +6,8 @@ mod deck_score;
 mod graphs;
 mod mastery;
 pub(crate) mod pace;
+mod performance;
+mod readiness;
 mod service;
 mod today;
 

@@ -1,0 +1,7 @@
+URL: https://www.khanacademy.org/test-prep/mcat/critical-analysis-and-reasoning-skills-practice-questions
+
+PLACEHOLDER CARS SOURCE -- replace this text with a real Khan Academy MCAT CARS passage plus its question(s), pasted by hand (the Khan site is bot-blocked to automated fetches). CARS is graded qualitatively, not by the auto-checked science gold set, because its answers are interpretive rather than objectively verifiable. Keep the URL line above so this unit stays cited to the Khan Academy CARS practice page.
+
+Paste the passage here as one paragraph. Passages in the Critical Analysis and Reasoning Skills section are drawn from the humanities and social sciences and test comprehension, reasoning beyond the text, and application of new information, not outside content knowledge.
+
+Paste each associated question and its answer choices here as a separate paragraph so the ingester treats it as its own source unit citing the Khan Academy CARS page.

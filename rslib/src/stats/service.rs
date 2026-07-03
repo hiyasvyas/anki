@@ -64,6 +64,20 @@ impl crate::services::StatsService for Collection {
     ) -> error::Result<anki_proto::stats::McatPaceResponse> {
         self.mcat_pace(&input.search)
     }
+
+    fn mcat_performance(
+        &mut self,
+        input: anki_proto::stats::McatPerformanceRequest,
+    ) -> error::Result<anki_proto::stats::McatPerformanceResponse> {
+        self.mcat_performance(&input.search)
+    }
+
+    fn mcat_readiness(
+        &mut self,
+        input: anki_proto::stats::McatReadinessRequest,
+    ) -> error::Result<anki_proto::stats::McatReadinessResponse> {
+        self.mcat_readiness(&input.search)
+    }
 }
 
 impl From<RevlogReviewKind> for i32 {

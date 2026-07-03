@@ -1,0 +1,156 @@
+{
+  "_about": "Challenge 7d paraphrase set: 30 cards, each with 2 exam-style questions that test the SAME idea in new words. Facts are the known-correct gold answers (cited); the reworded stems deliberately avoid the card's wording so that answering them measures TRANSFER, not memorized phrasing. Recall-on-card vs accuracy-on-reworded is computed by paraphrase_test.py from an attempts file; the gap is reported.",
+  "_declared_before_results": true,
+  "cards": [
+    {"card_id": "g01", "concept": "glycolysis location", "source_id": "bio-cellresp", "citation": "OpenStax Biology 2e, Ch. 7", "fact": "Glycolysis occurs in the cytoplasm (cytosol)",
+      "reworded": [
+        {"qid": "g01-r1", "stem": "A researcher fractionates a cell and finds the enzymes that split glucose into two three-carbon molecules in the soluble fraction, not any organelle. Where is glucose first broken down?", "choices": ["Cytoplasm", "Mitochondrial matrix", "Inner mitochondrial membrane", "Nucleus"], "answer_index": 0},
+        {"qid": "g01-r2", "stem": "Before pyruvate ever reaches the mitochondrion, the initial energy-yielding steps of glucose breakdown have already happened in which compartment?", "choices": ["Golgi", "Cytosol", "Lysosome", "Endoplasmic reticulum"], "answer_index": 1}
+      ]},
+    {"card_id": "g02", "concept": "final electron acceptor", "source_id": "bio-cellresp", "citation": "OpenStax Biology 2e, Ch. 7", "fact": "Oxygen is the final electron acceptor, reduced to water",
+      "reworded": [
+        {"qid": "g02-r1", "stem": "At the terminal end of the electron transport chain, electrons are handed off to a molecule that is then converted into water. What is that molecule?", "choices": ["Carbon dioxide", "Oxygen", "NAD+", "Pyruvate"], "answer_index": 1},
+        {"qid": "g02-r2", "stem": "Without this final acceptor, the chain backs up and aerobic ATP production halts. Which species plays that role?", "choices": ["Glucose", "Hydrogen gas", "O2", "FAD"], "answer_index": 2}
+      ]},
+    {"card_id": "g03", "concept": "ATP yield per glucose", "source_id": "bio-cellresp", "citation": "OpenStax Biology 2e, Ch. 7", "fact": "Roughly 30-32 ATP per glucose",
+      "reworded": [
+        {"qid": "g03-r1", "stem": "Modern estimates put the total aerobic ATP harvest from one glucose molecule at approximately how many?", "choices": ["2", "About 30-32", "About 100", "About 12"], "answer_index": 1},
+        {"qid": "g03-r2", "stem": "A textbook once said 36-38 ATP; current figures are somewhat lower. What is the commonly cited modern range per glucose?", "choices": ["4-6", "15-18", "30-32", "48-50"], "answer_index": 2}
+      ]},
+    {"card_id": "g04", "concept": "ATP synthase", "source_id": "bio-cellresp", "citation": "OpenStax Biology 2e, Ch. 7", "fact": "ATP synthase phosphorylates ADP using the proton gradient",
+      "reworded": [
+        {"qid": "g04-r1", "stem": "A membrane protein lets protons flow down their gradient and uses that flow to attach phosphate to ADP. Name it.", "choices": ["ATP synthase", "Hexokinase", "DNA polymerase", "Cytochrome c"], "answer_index": 0},
+        {"qid": "g04-r2", "stem": "Chemiosmosis couples the proton-motive force to the synthesis of ATP through which enzyme?", "choices": ["Pyruvate dehydrogenase", "ATP synthase", "Aldolase", "Catalase"], "answer_index": 1}
+      ]},
+    {"card_id": "g05", "concept": "membrane model", "source_id": "bio-membrane", "citation": "OpenStax Biology 2e, Ch. 5", "fact": "The fluid mosaic model",
+      "reworded": [
+        {"qid": "g05-r1", "stem": "How is the plasma membrane best described: a fluid bilayer with proteins drifting within it like tiles in a moving mosaic?", "choices": ["Lock-and-key model", "Fluid mosaic model", "Induced-fit model", "Semiconservative model"], "answer_index": 1},
+        {"qid": "g05-r2", "stem": "Which model explains why membrane proteins can diffuse laterally through a lipid bilayer?", "choices": ["Fluid mosaic model", "Bohr model", "Watson-Crick model", "Sliding filament model"], "answer_index": 0}
+      ]},
+    {"card_id": "g06", "concept": "Na/K pump stoichiometry", "source_id": "bio-membrane", "citation": "OpenStax Biology 2e, Ch. 5", "fact": "Three sodium out, two potassium in, per ATP",
+      "reworded": [
+        {"qid": "g06-r1", "stem": "For each ATP it spends, the sodium-potassium pump ejects how many sodium ions from the cell?", "choices": ["One", "Two", "Three", "Four"], "answer_index": 2},
+        {"qid": "g06-r2", "stem": "The Na+/K+-ATPase is electrogenic because it moves 3 of one ion out and 2 of another in. How many potassium ions enter per cycle?", "choices": ["Two", "Three", "One", "Four"], "answer_index": 0}
+      ]},
+    {"card_id": "g07", "concept": "active transport", "source_id": "bio-membrane", "citation": "OpenStax Biology 2e, Ch. 5", "fact": "Active transport moves against the gradient using ATP",
+      "reworded": [
+        {"qid": "g07-r1", "stem": "Moving a solute from where it is scarce to where it is abundant across a membrane requires which kind of transport?", "choices": ["Simple diffusion", "Active transport", "Osmosis", "Facilitated diffusion"], "answer_index": 1},
+        {"qid": "g07-r2", "stem": "Which transport type cannot proceed if ATP is depleted?", "choices": ["Active transport", "Passive diffusion", "Osmosis", "Facilitated diffusion"], "answer_index": 0}
+      ]},
+    {"card_id": "g08", "concept": "phospholipid head", "source_id": "bio-membrane", "citation": "OpenStax Biology 2e, Ch. 5", "fact": "The hydrophilic phosphate head faces the aqueous environment",
+      "reworded": [
+        {"qid": "g08-r1", "stem": "Which region of a phospholipid orients toward water on both faces of the membrane?", "choices": ["The fatty-acid tails", "The phosphate head", "The cholesterol ring", "The glycerol only"], "answer_index": 1},
+        {"qid": "g08-r2", "stem": "In a bilayer, the water-loving portions of the lipids point outward. What are those portions?", "choices": ["Hydrophobic tails", "Hydrophilic heads", "Transmembrane proteins", "Carbohydrate chains"], "answer_index": 1}
+      ]},
+    {"card_id": "g09", "concept": "semiconservative replication", "source_id": "bio-genetics", "citation": "OpenStax Biology 2e, Ch. 14", "fact": "Semiconservative: one parental + one new strand per daughter",
+      "reworded": [
+        {"qid": "g09-r1", "stem": "Meselson and Stahl showed each new DNA duplex keeps one old strand and one new one. What is this called?", "choices": ["Conservative", "Semiconservative", "Dispersive", "Fragmentary"], "answer_index": 1},
+        {"qid": "g09-r2", "stem": "After replication, what fraction of each daughter helix is newly synthesized?", "choices": ["All of it", "None of it", "Exactly one of the two strands", "A random scatter of pieces"], "answer_index": 2}
+      ]},
+    {"card_id": "g10", "concept": "polymerase directionality", "source_id": "bio-genetics", "citation": "OpenStax Biology 2e, Ch. 14", "fact": "DNA polymerase synthesizes 5' to 3'",
+      "reworded": [
+        {"qid": "g10-r1", "stem": "DNA polymerase can only add nucleotides to the 3' hydroxyl end, so synthesis runs in which direction?", "choices": ["3' to 5'", "5' to 3'", "Both at once", "Randomly"], "answer_index": 1},
+        {"qid": "g10-r2", "stem": "The need for a free 3'-OH dictates the orientation of new-strand growth as:", "choices": ["5'->3'", "3'->5'", "circular only", "antiparallel to itself"], "answer_index": 0}
+      ]},
+    {"card_id": "g11", "concept": "uracil in RNA", "source_id": "bio-genetics", "citation": "OpenStax Biology 2e, Ch. 15", "fact": "Uracil replaces thymine in RNA",
+      "reworded": [
+        {"qid": "g11-r1", "stem": "When DNA is transcribed to RNA, which base takes the place of thymine?", "choices": ["Cytosine", "Uracil", "Adenine", "Guanine"], "answer_index": 1},
+        {"qid": "g11-r2", "stem": "RNA lacks thymine. What pyrimidine does it use instead to pair with adenine?", "choices": ["Uracil", "Guanine", "Thymine", "Inosine"], "answer_index": 0}
+      ]},
+    {"card_id": "g12", "concept": "start codon", "source_id": "bio-genetics", "citation": "OpenStax Biology 2e, Ch. 15", "fact": "AUG codes for methionine",
+      "reworded": [
+        {"qid": "g12-r1", "stem": "Translation begins at a codon that also specifies a particular amino acid. Which codon and amino acid?", "choices": ["UAA / stop", "AUG / methionine", "GGG / glycine", "UGG / tryptophan"], "answer_index": 1},
+        {"qid": "g12-r2", "stem": "The first amino acid incorporated in most eukaryotic proteins is encoded by AUG. Which residue is it?", "choices": ["Methionine", "Serine", "Leucine", "Valine"], "answer_index": 0}
+      ]},
+    {"card_id": "g13", "concept": "enzyme mechanism", "source_id": "bio-enzyme", "citation": "OpenStax Biology 2e, Ch. 6", "fact": "Enzymes lower the activation energy",
+      "reworded": [
+        {"qid": "g13-r1", "stem": "A catalyst speeds a reaction without being used up. For enzymes, what quantity do they reduce to do this?", "choices": ["The equilibrium constant", "The activation energy", "The temperature", "The free-energy change"], "answer_index": 1},
+        {"qid": "g13-r2", "stem": "Enzymes do NOT change the equilibrium of a reaction; they only change its rate by altering what?", "choices": ["Delta G", "The activation-energy barrier", "The product concentration", "The enthalpy of products"], "answer_index": 1}
+      ]},
+    {"card_id": "g14", "concept": "Km meaning", "source_id": "bio-enzyme", "citation": "OpenStax Biology 2e, Ch. 6", "fact": "Km is the substrate concentration at half Vmax",
+      "reworded": [
+        {"qid": "g14-r1", "stem": "On a Michaelis-Menten curve, the substrate concentration that gives half of the maximum velocity is denoted:", "choices": ["Vmax", "Km", "kcat", "Ki"], "answer_index": 1},
+        {"qid": "g14-r2", "stem": "If an enzyme reaches half its top speed at 2 mM substrate, that 2 mM value is its:", "choices": ["Km", "Vmax", "turnover number", "Hill coefficient"], "answer_index": 0}
+      ]},
+    {"card_id": "g15", "concept": "competitive inhibition", "source_id": "bio-enzyme", "citation": "OpenStax Biology 2e, Ch. 6", "fact": "Competitive inhibitor: Vmax unchanged, apparent Km increases",
+      "reworded": [
+        {"qid": "g15-r1", "stem": "A molecule competes for the active site but can be outcompeted by adding substrate. How are Vmax and apparent Km affected?", "choices": ["Vmax same, Km up", "Vmax down, Km same", "both down", "both unchanged"], "answer_index": 0},
+        {"qid": "g15-r2", "stem": "Adding enough substrate fully restores maximum velocity. This is the signature of which inhibition, and what happens to apparent Km?", "choices": ["Competitive; Km increases", "Noncompetitive; Km decreases", "Uncompetitive; Vmax increases", "Competitive; Km decreases"], "answer_index": 0}
+      ]},
+    {"card_id": "g16", "concept": "Km and affinity", "source_id": "bio-enzyme", "citation": "OpenStax Biology 2e, Ch. 6", "fact": "Lower Km means higher affinity",
+      "reworded": [
+        {"qid": "g16-r1", "stem": "Enzyme A has a much smaller Km than enzyme B for the same substrate. What does this imply about A?", "choices": ["Lower affinity", "Higher affinity", "Slower turnover", "More subunits"], "answer_index": 1},
+        {"qid": "g16-r2", "stem": "A small Km indicates the enzyme reaches half-max velocity at low substrate, i.e. it binds substrate:", "choices": ["Weakly", "Tightly", "Irreversibly only", "Not at all"], "answer_index": 1}
+      ]},
+    {"card_id": "g17", "concept": "resting potential", "source_id": "bio-nervous", "citation": "OpenStax Biology 2e, Ch. 35", "fact": "About -70 mV",
+      "reworded": [
+        {"qid": "g17-r1", "stem": "An unstimulated neuron's interior sits at roughly what voltage relative to outside?", "choices": ["+40 mV", "-70 mV", "0 mV", "-200 mV"], "answer_index": 1},
+        {"qid": "g17-r2", "stem": "The typical resting membrane potential of a neuron is closest to which value?", "choices": ["-70 millivolts", "+70 millivolts", "-10 millivolts", "+140 millivolts"], "answer_index": 0}
+      ]},
+    {"card_id": "g18", "concept": "depolarization ion", "source_id": "bio-nervous", "citation": "OpenStax Biology 2e, Ch. 35", "fact": "Sodium enters during the rising phase",
+      "reworded": [
+        {"qid": "g18-r1", "stem": "Crossing threshold opens voltage-gated channels and one ion floods in to drive the upstroke of the action potential. Which ion?", "choices": ["Chloride", "Sodium", "Calcium (out)", "Potassium (in)"], "answer_index": 1},
+        {"qid": "g18-r2", "stem": "The rapid rise of an action potential is caused by the inward movement of which cation?", "choices": ["Na+", "K+", "Ca2+ leaving", "Cl-"], "answer_index": 0}
+      ]},
+    {"card_id": "g19", "concept": "saltatory conduction", "source_id": "bio-nervous", "citation": "OpenStax Biology 2e, Ch. 35", "fact": "Saltatory conduction",
+      "reworded": [
+        {"qid": "g19-r1", "stem": "In myelinated axons the impulse appears to jump between the gaps in the sheath, speeding conduction. This is called:", "choices": ["Continuous conduction", "Saltatory conduction", "Passive spread", "Retrograde transport"], "answer_index": 1},
+        {"qid": "g19-r2", "stem": "Conduction that leaps from one node of Ranvier to the next is termed:", "choices": ["Saltatory", "Tonic", "Decremental", "Ephaptic"], "answer_index": 0}
+      ]},
+    {"card_id": "g20", "concept": "peptide bond", "source_id": "biochem-aminoacids", "citation": "Lehninger, Ch. 3", "fact": "A peptide bond is an amide bond",
+      "reworded": [
+        {"qid": "g20-r1", "stem": "The covalent link joining two amino acids, formed by loss of water, is chemically a type of what bond?", "choices": ["Ester", "Amide (peptide)", "Glycosidic", "Phosphodiester"], "answer_index": 1},
+        {"qid": "g20-r2", "stem": "Between the carboxyl of one residue and the amino group of the next forms which linkage?", "choices": ["Peptide bond", "Disulfide bond", "Hydrogen bond", "Ionic bond"], "answer_index": 0}
+      ]},
+    {"card_id": "g21", "concept": "secondary structure bonds", "source_id": "biochem-aminoacids", "citation": "Lehninger, Ch. 3", "fact": "Hydrogen bonds along the backbone stabilize secondary structure",
+      "reworded": [
+        {"qid": "g21-r1", "stem": "Alpha helices and beta sheets are held in shape mainly by what interaction along the polypeptide backbone?", "choices": ["Disulfide bridges", "Backbone hydrogen bonds", "Ionic side-chain bonds", "Peptide bonds"], "answer_index": 1},
+        {"qid": "g21-r2", "stem": "Which weak interactions between backbone C=O and N-H groups define protein secondary structure?", "choices": ["Hydrogen bonds", "Van der Waals only", "Covalent bonds", "Metallic bonds"], "answer_index": 0}
+      ]},
+    {"card_id": "g22", "concept": "number of amino acids", "source_id": "biochem-aminoacids", "citation": "Lehninger, Ch. 3", "fact": "Twenty standard amino acids",
+      "reworded": [
+        {"qid": "g22-r1", "stem": "The genetic code assembles proteins from how many standard amino acid building blocks?", "choices": ["4", "20", "64", "100"], "answer_index": 1},
+        {"qid": "g22-r2", "stem": "Ribosomes string together residues drawn from a standard alphabet of what size?", "choices": ["Twenty", "Four", "Sixty-four", "Twelve"], "answer_index": 0}
+      ]},
+    {"card_id": "g23", "concept": "glycosidic bond", "source_id": "biochem-carbs", "citation": "Lehninger, Ch. 7", "fact": "Glycosidic bond formed by dehydration synthesis",
+      "reworded": [
+        {"qid": "g23-r1", "stem": "Two monosaccharides join with the loss of water. The resulting linkage is called a:", "choices": ["Peptide bond", "Glycosidic bond", "Ester bond", "Disulfide bond"], "answer_index": 1},
+        {"qid": "g23-r2", "stem": "Disaccharide formation is a condensation reaction producing which kind of bond?", "choices": ["Glycosidic", "Amide", "Phosphodiester", "Hydrogen"], "answer_index": 0}
+      ]},
+    {"card_id": "g24", "concept": "animal glucose storage", "source_id": "biochem-carbs", "citation": "Lehninger, Ch. 7", "fact": "Glycogen",
+      "reworded": [
+        {"qid": "g24-r1", "stem": "Animals bank surplus glucose in a branched polymer stored in liver and muscle. Its name?", "choices": ["Starch", "Glycogen", "Cellulose", "Chitin"], "answer_index": 1},
+        {"qid": "g24-r2", "stem": "The animal counterpart to plant starch, used for short-term glucose storage, is:", "choices": ["Glycogen", "Amylose", "Cellulose", "Glucagon"], "answer_index": 0}
+      ]},
+    {"card_id": "g25", "concept": "cellulose linkage", "source_id": "biochem-carbs", "citation": "Lehninger, Ch. 7", "fact": "Beta glycosidic linkages",
+      "reworded": [
+        {"qid": "g25-r1", "stem": "Humans cannot digest cellulose because its glucose units are joined by which linkage they lack the enzyme for?", "choices": ["Alpha-1,4", "Beta-1,4", "Alpha-1,6", "Peptide"], "answer_index": 1},
+        {"qid": "g25-r2", "stem": "Cellulose differs from starch chiefly in having what type of glycosidic linkage?", "choices": ["Beta", "Alpha", "Ester", "Ionic"], "answer_index": 0}
+      ]},
+    {"card_id": "g26", "concept": "pH definition", "source_id": "chem-acidbase", "citation": "OpenStax Chemistry 2e, Ch. 14", "fact": "pH = -log[H+]",
+      "reworded": [
+        {"qid": "g26-r1", "stem": "How is pH expressed in terms of hydrogen-ion concentration?", "choices": ["log[H+]", "Negative base-10 log of [H+]", "sqrt[H+]", "[H+] times temperature"], "answer_index": 1},
+        {"qid": "g26-r2", "stem": "If [H+] drops by a factor of ten, pH does what?", "choices": ["Rises by 1", "Falls by 1", "Rises by 10", "Unchanged"], "answer_index": 0}
+      ]},
+    {"card_id": "g27", "concept": "pKa and strength", "source_id": "chem-acidbase", "citation": "OpenStax Chemistry 2e, Ch. 14", "fact": "Smaller pKa means stronger acid",
+      "reworded": [
+        {"qid": "g27-r1", "stem": "Of two acids, the one with the lower pKa is:", "choices": ["Weaker", "Stronger", "Neutral", "A base"], "answer_index": 1},
+        {"qid": "g27-r2", "stem": "A larger Ka corresponds to a smaller pKa, which indicates an acid that is:", "choices": ["Stronger", "Weaker", "Amphoteric", "Insoluble"], "answer_index": 0}
+      ]},
+    {"card_id": "g28", "concept": "buffer composition", "source_id": "chem-acidbase", "citation": "OpenStax Chemistry 2e, Ch. 14", "fact": "A weak acid and its conjugate base",
+      "reworded": [
+        {"qid": "g28-r1", "stem": "A solution that resists pH change is typically made from which pair?", "choices": ["Strong acid + strong base", "Weak acid + its conjugate base", "Two salts", "A metal + nonmetal"], "answer_index": 1},
+        {"qid": "g28-r2", "stem": "The Henderson-Hasselbalch equation applies to a mixture of what two species?", "choices": ["Weak acid and conjugate base", "Two strong acids", "Water and salt", "An oxidizer and reducer"], "answer_index": 0}
+      ]},
+    {"card_id": "g29", "concept": "buffer capacity", "source_id": "chem-acidbase", "citation": "OpenStax Chemistry 2e, Ch. 14", "fact": "Buffer works best near its pKa",
+      "reworded": [
+        {"qid": "g29-r1", "stem": "A buffer has maximum capacity when the solution pH is near which value?", "choices": ["7 exactly", "Its pKa", "Far above pKa", "Far below pKa"], "answer_index": 1},
+        {"qid": "g29-r2", "stem": "Equal concentrations of weak acid and conjugate base give the strongest buffering when pH equals:", "choices": ["pKa", "0", "14", "the pKb"], "answer_index": 0}
+      ]},
+    {"card_id": "g30", "concept": "spontaneity", "source_id": "chem-thermo", "citation": "OpenStax Chemistry 2e, Ch. 16", "fact": "Spontaneous when Gibbs free energy change is negative",
+      "reworded": [
+        {"qid": "g30-r1", "stem": "A reaction proceeds without external energy input when its Gibbs free-energy change carries which sign?", "choices": ["Positive", "Negative", "Zero always", "Undefined"], "answer_index": 1},
+        {"qid": "g30-r2", "stem": "Exergonic (spontaneous) processes are characterized by a delta G that is:", "choices": ["Less than zero", "Greater than zero", "Equal to the temperature", "Equal to enthalpy"], "answer_index": 0}
+      ]}
+  ]
+}

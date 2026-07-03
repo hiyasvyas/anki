@@ -132,6 +132,59 @@ def test_mcat_pace():
     assert tightened.start_rung >= 1
 
 
+def test_mcat_performance():
+    # Speedrun: memory->performance bridge over the shared Rust engine. With no
+    # measured transfer factor, performance is shown equal to memory.
+    col = getEmptyCol()
+    empty = col._backend.mcat_performance(search="")
+    assert empty.scorable_cards == 0
+    assert empty.performance == 0.0
+    assert empty.perf_lower == 0.0
+    assert empty.perf_upper == 0.0
+    # Honest default: no bridge measured yet, so the factor is 1.0.
+    assert empty.transfer_measured is False
+    assert abs(empty.transfer_factor - 1.0) < 1e-6
+
+    note = col.newNote()
+    note["Front"] = "foo"
+    col.addNote(note)
+
+    report = col._backend.mcat_performance(search="")
+    memory = col._backend.mcat_deck_score(search="")
+    assert report.scorable_cards == 1
+    assert len(report.topics) == 1
+    # Unmeasured transfer factor => performance mirrors the memory score/range.
+    assert abs(report.performance - memory.score) < 1e-6
+    assert abs(report.perf_lower - memory.score_lower) < 1e-6
+    assert abs(report.perf_upper - memory.score_upper) < 1e-6
+
+
+def test_mcat_readiness():
+    # Speedrun: projected MCAT score over the shared Rust engine, with the
+    # give-up rule enforced in the engine.
+    col = getEmptyCol()
+    empty = col._backend.mcat_readiness(search="")
+    # An empty collection has no evidence, so the engine must abstain.
+    assert empty.has_score is False
+    assert empty.scale_min == 472.0
+    assert empty.scale_max == 528.0
+    assert empty.graded_reviews == 0
+    assert empty.min_graded_reviews == 230
+    # It still reports what is missing rather than inventing a number.
+    assert len(empty.reasons) > 0
+
+    note = col.newNote()
+    note["Front"] = "foo"
+    col.addNote(note)
+    c = col.sched.getCard()
+    col.sched.answerCard(c, 3)
+
+    # One review is nowhere near the 230-review threshold: still abstaining.
+    report = col._backend.mcat_readiness(search="")
+    assert report.has_score is False
+    assert report.graded_reviews < report.min_graded_reviews
+
+
 def test_mcat_pace_is_undo_safe():
     # Speedrun: mcat_pace is strictly read-only, so it must not create or clear
     # an undo entry, and undo of a real action must still work afterwards.
@@ -168,6 +221,8 @@ def test_mcat_queries_are_undo_safe():
     # Call the Rust engine changes; these must not touch undo-tracked state.
     col._backend.mcat_mastery(search="")
     col._backend.mcat_deck_score(search="")
+    col._backend.mcat_performance(search="")
+    col._backend.mcat_readiness(search="")
 
     # The queries neither created nor cleared an undo entry.
     assert col.undo_status().undo == undo_before

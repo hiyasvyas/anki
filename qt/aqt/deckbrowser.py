@@ -138,6 +138,10 @@ class DeckBrowser:
             self._mcat_set_exam_date()
         elif cmd == "mcat_clear_exam":
             self._mcat_clear_exam_date()
+        elif cmd == "mcat_gen_ai":
+            import aqt.mcat_ai
+
+            aqt.mcat_ai.generate_practice_deck(self.mw)
         return False
 
     def set_current_deck(self, deck_id: DeckId) -> None:
@@ -190,7 +194,10 @@ class DeckBrowser:
         )
         gui_hooks.deck_browser_will_render_content(self, content)
         self.web.stdHtml(
-            self._v1_upgrade_message(data.sched_upgrade_required)
+            self._render_page_theme()
+            + self._v1_upgrade_message(data.sched_upgrade_required)
+            + self._render_mcat_scores()
+            + self._render_ai_panel()
             + self._render_mcat_panel()
             + self._render_pace_panel()
             + self._body % content.__dict__,
@@ -215,6 +222,89 @@ class DeckBrowser:
             self._render_data.studied_today
         )
 
+    def _render_page_theme(self) -> str:
+        """Speedrun cosmetic layer: replace the plain gray deck-browser
+        background with a soft pastel wash and turn the deck list into a frosted
+        'glass' card. Colors are forced (not theme variables) so it reads the
+        same in both light and dark Anki themes. Purely visual — no data."""
+        return """
+<style>
+html,body{background:linear-gradient(135deg,#f2f0ff 0%,#fdeafb 34%,#e6fbf3 68%,#fff4e4 100%)
+ fixed !important;min-height:100vh;}
+center>table{background:rgba(255,255,255,.66);border:1px solid rgba(120,110,190,.20);
+ border-radius:20px;padding:14px 20px !important;margin-top:6px;
+ box-shadow:0 12px 30px rgba(80,70,140,.14),0 2px 6px rgba(80,70,140,.06);
+ backdrop-filter:blur(6px);}
+center>table th{color:rgba(49,46,77,.62) !important;
+ border-bottom:1px solid rgba(120,110,190,.22) !important;}
+center>table td{color:#312e4d;}
+center>table a.deck,center>table .collapse{color:#312e4d !important;}
+center>table tr.deck td{border-bottom:1px solid rgba(120,110,190,.14) !important;}
+center>table .current td,
+center>table tr:hover:not(.top-level-drag-row) td{
+ background:rgba(109,94,252,.12) !important;}
+#studiedToday{color:rgba(49,46,77,.7) !important;margin:1.6em 0 !important;}
+</style>
+"""
+
+    def _render_ai_panel(self) -> str:
+        """Home-page entry point for the in-app AI Transfer-Question generator
+        (``aqt/mcat_ai.py``). Turns an existing deck into new, reworded,
+        gate-checked practice questions. Fails safe to an empty string."""
+        try:
+            if self.mw.col is None or not self.mw.col.decks.all_names_and_ids(
+                include_filtered=False
+            ):
+                return ""
+            import aqt.mcat_ai
+
+            if not aqt.mcat_ai.ai_enabled(self.mw.col):
+                return ""
+        except Exception:
+            return ""
+
+        css = """
+<style>
+@keyframes mcatUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.ai-card{--a1:#7c3aed;--a2:#c084fc;max-width:700px;margin:16px auto 8px;padding:18px 22px;
+ border:1px solid #e6d8fb;border-radius:20px;text-align:start;color:#33235c;
+ background:linear-gradient(150deg,#f5edff,#fdf0fb);
+ box-shadow:0 12px 30px rgba(124,58,237,.18),0 2px 6px rgba(90,60,140,.06);
+ position:relative;overflow:hidden;animation:mcatUp .5s cubic-bezier(.2,.7,.3,1) both;
+ display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.ai-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));}
+.ai-card::after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;
+ border-radius:50%;background:radial-gradient(closest-side,var(--a2),transparent);
+ opacity:.26;pointer-events:none;}
+.ai-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;}
+.ai-title::before{content:"";width:10px;height:10px;border-radius:50%;
+ background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 10px var(--a2);}
+.ai-sub{font-size:12px;color:rgba(51,35,92,.8);margin-top:4px;line-height:1.45;max-width:430px;}
+.ai-btn{flex:none;border:0;cursor:pointer;font-size:13px;font-weight:800;color:#fff;
+ padding:11px 20px;border-radius:12px;white-space:nowrap;
+ background:linear-gradient(135deg,var(--a1),var(--a2));
+ box-shadow:0 6px 18px rgba(124,58,237,.42);
+ transition:transform .15s ease,box-shadow .15s ease;}
+.ai-btn:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(124,58,237,.55);}
+</style>
+"""
+        return (
+            css
+            + """
+<div class="ai-card">
+  <div>
+    <div class="ai-title">AI Practice Generator</div>
+    <div class="ai-sub">Turn any deck into <b>new, reworded exam-style
+     questions</b> — the memory&rarr;performance bridge. Each card is checked for
+     source-grounding and blocked if it's a copy or a wrong fact, then added as a
+     practice deck you can study here.</div>
+  </div>
+  <button class="ai-btn" onclick='pycmd("mcat_gen_ai")'>&#10022; Generate practice deck</button>
+</div>
+"""
+        )
+
     # Speedrun: MCAT readiness panel (home page)
     ##########################################################################
 
@@ -232,6 +322,142 @@ class DeckBrowser:
     # claiming readiness for the whole exam (see challenge 7c).
     _MCAT_MIN_REVIEWS = 230
     _MCAT_MIN_TOPIC_COVERAGE = 0.5
+
+    def _render_mcat_scores(self) -> str:
+        """The three honest scores side by side — Memory, Performance, and
+        Readiness — each with a range, driven entirely by the Rust engine
+        (``mcat_deck_score``, ``mcat_performance``, ``mcat_readiness``). This is
+        the memory→performance→score bridge from section 4: they are shown as
+        three *separate* numbers, never one blended figure. Readiness carries
+        the engine's give-up rule and abstains when the evidence is thin. Fails
+        safe to an empty string so it can never break the deck list."""
+        try:
+            memory = self.mw.col._backend.mcat_deck_score(search="")
+            perf = self.mw.col._backend.mcat_performance(search="")
+            ready = self.mw.col._backend.mcat_readiness(search="")
+        except Exception:
+            return ""
+
+        if memory.scorable_cards == 0:
+            return ""
+
+        def pct(x: float) -> str:
+            return f"{x * 100:.0f}%"
+
+        def clamp01(x: float) -> float:
+            return max(0.0, min(1.0, x))
+
+        m_point, m_lower, m_upper = (
+            clamp01(memory.score),
+            clamp01(memory.score_lower),
+            clamp01(memory.score_upper),
+        )
+        p_point, p_lower, p_upper = (
+            clamp01(perf.performance),
+            clamp01(perf.perf_lower),
+            clamp01(perf.perf_upper),
+        )
+        if perf.transfer_measured:
+            p_note = f"memory × measured transfer {perf.transfer_factor:.2f}"
+        else:
+            p_note = "transfer not yet measured — shown equal to memory"
+
+        span = (ready.scale_max - ready.scale_min) or 1.0
+        if ready.has_score:
+            r_big = f"{ready.projected_score:.0f}"
+            r_sub = (
+                f"likely <b>{ready.score_lower:.0f}–{ready.score_upper:.0f}</b>"
+                f" · {ready.confidence} confidence"
+            )
+            r_lo = clamp01((ready.score_lower - ready.scale_min) / span)
+            r_hi = clamp01((ready.score_upper - ready.scale_min) / span)
+            r_pt = clamp01((ready.projected_score - ready.scale_min) / span)
+            r_bar = f"""
+    <div class="mcat3-bar">
+      <div class="mcat3-range" style="left:{r_lo * 100:.1f}%;width:{(r_hi - r_lo) * 100:.1f}%"></div>
+      <div class="mcat3-point" style="left:{r_pt * 100:.1f}%"></div>
+    </div>"""
+        else:
+            r_big = "—"
+            missing = ready.reasons[0] if ready.reasons else "not enough data"
+            r_sub = f"no score yet · {html.escape(missing)}"
+            r_bar = ""
+
+        def bar(lower: float, upper: float, point: float) -> str:
+            return f"""
+    <div class="mcat3-bar">
+      <div class="mcat3-range" style="left:{lower * 100:.1f}%;width:{(upper - lower) * 100:.1f}%"></div>
+      <div class="mcat3-point" style="left:{point * 100:.1f}%"></div>
+    </div>"""
+
+        css = """
+<style>
+@keyframes mcatUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.mcat3-wrap{max-width:700px;margin:20px auto 8px;display:flex;gap:14px;}
+.mcat3-tile{flex:1;position:relative;padding:18px 18px 16px;border-radius:20px;
+ border:1px solid var(--brd);color:#312e4d;
+ background:linear-gradient(150deg,var(--bg1),var(--bg2));
+ box-shadow:0 10px 26px var(--glow),0 2px 6px rgba(60,50,110,.06);
+ overflow:hidden;text-align:start;
+ animation:mcatUp .5s cubic-bezier(.2,.7,.3,1) both;
+ transition:transform .18s ease,box-shadow .18s ease;}
+.mcat3-tile:nth-child(2){animation-delay:.08s}
+.mcat3-tile:nth-child(3){animation-delay:.16s}
+.mcat3-tile:hover{transform:translateY(-4px);
+ box-shadow:0 18px 40px var(--glow),0 4px 10px rgba(60,50,110,.08);}
+.mcat3-tile::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));}
+.mcat3-tile::after{content:"";position:absolute;top:-48px;right:-48px;width:140px;height:140px;
+ border-radius:50%;background:radial-gradient(closest-side,var(--a2),transparent);
+ opacity:.32;pointer-events:none;}
+.mcat3-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;
+ text-transform:uppercase;letter-spacing:.07em;color:rgba(49,46,77,.66);}
+.mcat3-label::before{content:"";width:9px;height:9px;border-radius:50%;
+ background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 10px var(--a2);}
+.mcat3-big{font-size:40px;font-weight:900;line-height:1.05;margin-top:7px;letter-spacing:-.02em;
+ color:var(--a1);background:linear-gradient(135deg,var(--a1),var(--a2));
+ -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.mcat3-sub{font-size:11px;color:rgba(49,46,77,.78);margin-top:3px;line-height:1.4;}
+.mcat3-sub b{color:var(--a1);}
+.mcat3-bar{position:relative;height:9px;border-radius:999px;margin:12px 0 2px;
+ background:rgba(49,46,77,.12);}
+.mcat3-range{position:absolute;top:0;bottom:0;border-radius:999px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 0 12px var(--a2);}
+.mcat3-point{position:absolute;top:-4px;width:4px;height:17px;border-radius:3px;
+ background:#fff;box-shadow:0 0 0 2px var(--a2),0 0 10px var(--a2);}
+.mcat3-tag{font-size:10px;color:rgba(49,46,77,.5);margin-top:9px;}
+.m-mem{--a1:#6d5efc;--a2:#9d8bff;--bg1:#eef0ff;--bg2:#f7f0ff;--brd:#ddd8ff;--glow:rgba(109,94,252,.22);}
+.m-perf{--a1:#c026d3;--a2:#f472e6;--bg1:#fdeafe;--bg2:#fdf0f8;--brd:#f4d3f6;--glow:rgba(192,38,211,.20);}
+.m-ready{--a1:#0d9488;--a2:#34d399;--bg1:#e5fbf3;--bg2:#effcf1;--brd:#c4f1e2;--glow:rgba(13,148,136,.20);}
+</style>
+"""
+        return (
+            css
+            + f"""
+<div class="mcat3-wrap">
+  <div class="mcat3-tile m-mem">
+    <div class="mcat3-label">Memory</div>
+    <div class="mcat3-big">{pct(m_point)}</div>
+    <div class="mcat3-sub">recall now · range <b>{pct(m_lower)}–{pct(m_upper)}</b></div>
+    {bar(m_lower, m_upper, m_point)}
+    <div class="mcat3-tag">Rust · mcat_deck_score</div>
+  </div>
+  <div class="mcat3-tile m-perf">
+    <div class="mcat3-label">Performance</div>
+    <div class="mcat3-big">{pct(p_point)}</div>
+    <div class="mcat3-sub">new questions · range <b>{pct(p_lower)}–{pct(p_upper)}</b></div>
+    {bar(p_lower, p_upper, p_point)}
+    <div class="mcat3-tag">Rust · mcat_performance · {html.escape(p_note)}</div>
+  </div>
+  <div class="mcat3-tile m-ready">
+    <div class="mcat3-label">Readiness</div>
+    <div class="mcat3-big">{r_big}</div>
+    <div class="mcat3-sub">{r_sub}</div>{r_bar}
+    <div class="mcat3-tag">Rust · mcat_readiness · MCAT {ready.scale_min:.0f}–{ready.scale_max:.0f}</div>
+  </div>
+</div>
+"""
+        )
 
     def _render_mcat_panel(self) -> str:
         """Home-page readiness card driven entirely by the Rust engine calls
@@ -261,32 +487,52 @@ class DeckBrowser:
 
         css = """
 <style>
-.mcat-card{max-width:640px;margin:14px auto 4px;padding:16px 18px;border:1px solid
- var(--border,rgba(128,128,128,.35));border-radius:12px;text-align:start;
- background:var(--canvas-elevated,rgba(128,128,128,.06));}
-.mcat-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
-.mcat-title{font-weight:700;font-size:15px;}
-.mcat-tag{font-size:11px;opacity:.6;}
-.mcat-score{font-size:34px;font-weight:800;line-height:1.1;}
-.mcat-sub{font-size:12px;opacity:.8;margin-top:2px;}
-.mcat-bar{position:relative;height:12px;border-radius:6px;margin:12px 0 6px;
- background:rgba(128,128,128,.25);overflow:hidden;}
-.mcat-range{position:absolute;top:0;bottom:0;background:rgba(70,130,220,.55);}
-.mcat-point{position:absolute;top:-3px;width:3px;height:18px;background:currentColor;}
-.mcat-grid{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;margin-top:8px;}
-.mcat-grid b{font-size:15px;display:block;}
-.mcat-note{font-size:11px;opacity:.7;margin-top:10px;line-height:1.4;}
-.mcat-conf{font-weight:700;}
-.mcat-abstain{font-size:15px;font-weight:700;margin:4px 0;}
-.mcat-subtitle{font-weight:700;font-size:13px;margin:2px 0 8px;display:flex;
- justify-content:space-between;align-items:baseline;}
+@keyframes mcatUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.mcat-card{--a1:#0d9488;--a2:#34d399;max-width:700px;margin:16px auto 8px;padding:20px 22px;
+ border:1px solid #c4f1e2;border-radius:20px;text-align:start;color:#26413a;
+ background:linear-gradient(150deg,#e6fbf4,#f0fcf3);
+ box-shadow:0 12px 30px rgba(13,148,136,.18),0 2px 6px rgba(40,90,80,.06);
+ position:relative;overflow:hidden;animation:mcatUp .5s cubic-bezier(.2,.7,.3,1) both;}
+.mcat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));}
+.mcat-card::after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;
+ border-radius:50%;background:radial-gradient(closest-side,var(--a2),transparent);
+ opacity:.22;pointer-events:none;}
+.mcat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.mcat-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;}
+.mcat-title::before{content:"";width:10px;height:10px;border-radius:50%;
+ background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 10px var(--a2);}
+.mcat-tag{font-size:11px;color:rgba(38,65,58,.55);}
+.mcat-score{font-size:46px;font-weight:900;line-height:1.02;letter-spacing:-.02em;
+ color:var(--a1);background:linear-gradient(135deg,var(--a1),var(--a2));
+ -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.mcat-sub{font-size:12px;color:rgba(38,65,58,.82);margin-top:3px;}
+.mcat-sub b{color:var(--a1);}
+.mcat-bar{position:relative;height:11px;border-radius:999px;margin:14px 0 6px;
+ background:rgba(38,65,58,.12);}
+.mcat-range{position:absolute;top:0;bottom:0;border-radius:999px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 0 12px var(--a2);}
+.mcat-point{position:absolute;top:-4px;width:4px;height:19px;border-radius:3px;
+ background:#fff;box-shadow:0 0 0 2px var(--a2),0 0 10px var(--a2);}
+.mcat-grid{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-top:14px;}
+.mcat-grid>div{flex:1;min-width:82px;padding:10px 12px;border-radius:13px;
+ background:rgba(255,255,255,.6);border:1px solid rgba(13,148,136,.14);color:rgba(38,65,58,.7);}
+.mcat-grid b{font-size:17px;display:block;margin-top:3px;font-weight:800;color:#26413a;}
+.mcat-conf{color:var(--a1)!important;}
+.mcat-note{font-size:11px;color:rgba(38,65,58,.72);margin-top:12px;line-height:1.5;}
+.mcat-note b{color:#26413a;}
+.mcat-abstain{font-size:19px;font-weight:900;margin:6px 0;color:#b45309;}
+.mcat-subtitle{font-weight:800;font-size:14px;margin:2px 0 10px;display:flex;
+ justify-content:space-between;align-items:center;}
 .mcat-ttable{width:100%;border-collapse:collapse;font-size:12px;}
-.mcat-ttable th{text-align:start;opacity:.6;font-weight:600;padding:2px 6px;}
-.mcat-ttable td{padding:3px 6px;border-top:1px solid rgba(128,128,128,.18);}
+.mcat-ttable th{text-align:start;color:rgba(38,65,58,.55);font-weight:700;padding:5px 6px;}
+.mcat-ttable td{padding:6px 6px;border-top:1px solid rgba(13,148,136,.14);}
+.mcat-ttable tr:hover td{background:rgba(52,211,153,.1);}
 .mcat-tname{font-weight:600;}
 .mcat-tbarcell{width:120px;}
-.mcat-tbar{height:8px;border-radius:4px;background:rgba(128,128,128,.25);overflow:hidden;}
-.mcat-tbar>div{height:100%;background:rgba(70,160,90,.75);}
+.mcat-tbar{height:9px;border-radius:999px;background:rgba(38,65,58,.12);overflow:hidden;}
+.mcat-tbar>div{height:100%;border-radius:999px;
+ background:linear-gradient(90deg,#0d9488,#34d399);}
 </style>
 """
 
@@ -427,11 +673,25 @@ class DeckBrowser:
 
     def _mcat_set_exam_date(self) -> None:
         """Prompt for the MCAT date and store it (epoch seconds) in the config
-        key the Rust pace model reads. Only sets the ladder's *starting* rung."""
+        key the Rust pace model reads. Only sets the ladder's *starting* rung.
+        Pre-fills the current date (if any) so it doubles as an edit."""
         import datetime
 
+        current = self.mw.col.get_config("examDate", None)
+        default = ""
+        if current:
+            try:
+                default = datetime.datetime.fromtimestamp(current).strftime("%Y-%m-%d")
+            except (ValueError, OverflowError, OSError):
+                default = ""
+
         text = (
-            getOnlyText("Enter your MCAT exam date (YYYY-MM-DD):", parent=self.mw) or ""
+            getOnlyText(
+                "Enter your MCAT exam date (YYYY-MM-DD):",
+                parent=self.mw,
+                default=default,
+            )
+            or ""
         ).strip()
         if not text:
             return
@@ -475,21 +735,38 @@ class DeckBrowser:
 
         css = """
 <style>
-.pace-card{max-width:640px;margin:14px auto 4px;padding:16px 18px;border:1px solid
- var(--border,rgba(128,128,128,.35));border-radius:12px;text-align:start;
- background:var(--canvas-elevated,rgba(128,128,128,.06));}
-.pace-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
-.pace-title{font-weight:700;font-size:15px;}
-.pace-tag{font-size:11px;opacity:.6;}
-.pace-sub{font-size:12px;opacity:.85;margin-top:2px;}
-.pace-btn{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:8px;
- border:1px solid rgba(70,130,220,.6);cursor:pointer;font-size:12px;font-weight:600;}
-.pace-ttable{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
-.pace-ttable th{text-align:start;opacity:.6;font-weight:600;padding:2px 6px;}
-.pace-ttable td{padding:3px 6px;border-top:1px solid rgba(128,128,128,.18);}
+@keyframes mcatUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pace-card{--a1:#ea7a1b;--a2:#fbbf24;max-width:700px;margin:16px auto 8px;padding:20px 22px;
+ border:1px solid #fbe2bd;border-radius:20px;text-align:start;color:#4a3410;
+ background:linear-gradient(150deg,#fff3e0,#fff8ec);
+ box-shadow:0 12px 30px rgba(234,122,27,.18),0 2px 6px rgba(120,80,20,.06);
+ position:relative;overflow:hidden;animation:mcatUp .5s cubic-bezier(.2,.7,.3,1) both;}
+.pace-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;
+ background:linear-gradient(90deg,var(--a1),var(--a2));}
+.pace-card::after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;
+ border-radius:50%;background:radial-gradient(closest-side,var(--a2),transparent);
+ opacity:.28;pointer-events:none;}
+.pace-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.pace-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;}
+.pace-title::before{content:"";width:10px;height:10px;border-radius:50%;
+ background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 10px var(--a2);}
+.pace-tag{font-size:11px;color:rgba(74,52,16,.55);}
+.pace-sub{font-size:12px;color:rgba(74,52,16,.82);margin-top:2px;}
+.pace-sub b{color:var(--a1);}
+.pace-btn{display:inline-block;margin-top:10px;padding:9px 18px;border-radius:12px;
+ border:0;cursor:pointer;font-size:12px;font-weight:800;color:#4a3410;
+ background:linear-gradient(135deg,var(--a1),var(--a2));
+ box-shadow:0 4px 14px rgba(234,122,27,.42);
+ transition:transform .15s ease,box-shadow .15s ease;}
+.pace-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(234,122,27,.55);}
+.pace-ttable{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.pace-ttable th{text-align:start;color:rgba(74,52,16,.55);font-weight:700;padding:5px 6px;}
+.pace-ttable td{padding:6px 6px;border-top:1px solid rgba(234,122,27,.16);}
+.pace-ttable tr:hover td{background:rgba(251,191,36,.14);}
 .pace-tname{font-weight:600;}
-.pace-note{font-size:11px;opacity:.7;margin-top:10px;line-height:1.4;}
-.pace-ready{color:rgb(70,160,90);font-weight:700;}
+.pace-note{font-size:11px;color:rgba(74,52,16,.72);margin-top:12px;line-height:1.5;}
+.pace-note b{color:#4a3410;}
+.pace-ready{color:#0d9488;font-weight:800;}
 </style>
 """
 
@@ -506,7 +783,9 @@ class DeckBrowser:
   <div class="pace-sub">Exam in <b>{pace.exam_months_remaining:.1f} months</b>
    · starting target <b>{target_label(start_ms)}</b> · goal <b>{goal}</b>
    <span class="pace-tag" style="cursor:pointer"
-    onclick='pycmd("mcat_clear_exam")'>(change)</span></div>"""
+    onclick='pycmd("mcat_set_exam")'>(change)</span>
+   <span class="pace-tag" style="cursor:pointer"
+    onclick='pycmd("mcat_clear_exam")'>(clear)</span></div>"""
 
         rows = ""
         for t in sorted(pace.topics, key=lambda t: (-t.weakness, t.topic)):

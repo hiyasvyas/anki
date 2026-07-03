@@ -1,0 +1,42 @@
+{
+  "citation": "SEED PLACEHOLDER -- OpenStax Biology 2e (general reference). Replace/augment with the user's Khan Academy MCAT and AAMC content.",
+  "url": "https://openstax.org/details/books/biology-2e",
+  "_seed_placeholder": true,
+  "units": [
+    {
+      "source_id": "bio-cellresp",
+      "topic": "Biology::Cellular Respiration",
+      "citation": "OpenStax Biology 2e, Ch. 7 Cellular Respiration",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "text": "Aerobic cellular respiration converts glucose into usable energy stored as ATP. Glycolysis occurs in the cytoplasm and splits one glucose into two pyruvate molecules, producing a net of two ATP and two NADH without requiring oxygen. Pyruvate is then oxidized and enters the citric acid cycle in the mitochondrial matrix, generating NADH and FADH2. These electron carriers donate electrons to the electron transport chain on the inner mitochondrial membrane, where oxygen serves as the final electron acceptor and is reduced to water. The energy released pumps protons across the inner membrane, and ATP synthase uses the resulting proton gradient to phosphorylate ADP into ATP through oxidative phosphorylation, which yields the large majority of the roughly 30 to 32 ATP produced per glucose."
+    },
+    {
+      "source_id": "bio-membrane",
+      "topic": "Biology::Membranes",
+      "citation": "OpenStax Biology 2e, Ch. 5 Structure and Function of Plasma Membranes",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "text": "The plasma membrane is described by the fluid mosaic model: a fluid phospholipid bilayer studded with embedded proteins, cholesterol, and carbohydrates. Each phospholipid has a hydrophilic phosphate head facing the aqueous environment and two hydrophobic fatty-acid tails facing inward, which makes the membrane selectively permeable. Small nonpolar molecules such as oxygen and carbon dioxide diffuse directly across, while ions and large polar molecules require transport proteins. Passive transport, including simple diffusion, facilitated diffusion, and osmosis, moves substances down their concentration gradient without energy. Active transport moves substances against their gradient and requires ATP; the sodium-potassium pump exports three sodium ions and imports two potassium ions per ATP hydrolyzed, maintaining the electrochemical gradient."
+    },
+    {
+      "source_id": "bio-genetics",
+      "topic": "Biology::Molecular Genetics",
+      "citation": "OpenStax Biology 2e, Ch. 14-15 DNA Structure, Replication, and Gene Expression",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "text": "DNA replication is semiconservative: each daughter molecule contains one original parental strand and one newly synthesized strand. DNA polymerase synthesizes new strands only in the five-prime to three-prime direction, producing a continuous leading strand and a discontinuous lagging strand made of Okazaki fragments. During gene expression, transcription copies a gene's DNA template into messenger RNA using RNA polymerase, with uracil replacing thymine. Translation then reads the mRNA in three-nucleotide codons at the ribosome, where transfer RNA molecules deliver the matching amino acids. The genetic code is degenerate, meaning multiple codons can specify the same amino acid, and the start codon AUG codes for methionine."
+    },
+    {
+      "source_id": "bio-enzyme",
+      "topic": "Biology::Enzymes",
+      "citation": "OpenStax Biology 2e, Ch. 6 Metabolism (Enzymes)",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "text": "Enzymes are biological catalysts that speed reactions by lowering the activation energy without being consumed or changing the reaction's equilibrium. Substrate binds the active site according to the induced-fit model. Michaelis-Menten kinetics describe how reaction velocity depends on substrate concentration; Vmax is the maximum rate and Km is the substrate concentration at half of Vmax, so a lower Km indicates higher affinity. A competitive inhibitor binds the active site and can be overcome by adding more substrate, raising the apparent Km while leaving Vmax unchanged. A noncompetitive inhibitor binds an allosteric site and lowers Vmax without changing Km. Enzyme activity is sensitive to temperature and pH, and extreme conditions cause denaturation."
+    },
+    {
+      "source_id": "bio-nervous",
+      "topic": "Biology::Nervous System",
+      "citation": "OpenStax Biology 2e, Ch. 35 The Nervous System",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "text": "A neuron maintains a resting membrane potential of about negative seventy millivolts, kept negative inside by the sodium-potassium pump and potassium leak channels. When a stimulus depolarizes the membrane past threshold, voltage-gated sodium channels open and sodium rushes in, producing the rising phase of the action potential; then sodium channels inactivate and voltage-gated potassium channels open to repolarize the cell. The action potential is all-or-none and propagates without losing strength. In myelinated axons, the myelin sheath insulates the membrane and the impulse jumps between nodes of Ranvier in saltatory conduction, greatly increasing speed. At the synapse, the signal triggers release of neurotransmitters that diffuse across the cleft and bind receptors on the postsynaptic cell."
+    }
+  ]
+}

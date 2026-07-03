@@ -1,0 +1,12 @@
+# Runtime sync-server data (full collection + media) — never commit
+/syncbase/
+
+# Local build / run logs (proof/*.log test output is kept intentionally)
+/*.log
+/*.out
+
+# Large phone build binary — documented in packaging.md, not committed to git
+/*.apk
+
+# Scratch screenshots — proof is captured in the demo video, not the repo
+/*.png

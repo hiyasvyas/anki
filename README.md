@@ -21,11 +21,13 @@ shows nothing.
 The MCAT asks for more than memory, so we keep three different questions separate
 and never blend them into one flattering number:
 
-| Question        | "Can the student…"                                     | Status                                                                                                                         |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Memory**      | …recall a fact right now?                              | **Built** — FSRS recall surfaced as an honest, ranged score (this milestone)                                                   |
-| **Performance** | …answer a new, exam-style question that uses the fact? | Planned (later milestone)                                                                                                      |
-| **Readiness**   | …get what score today, and how sure are we?            | Partial — a deck-level mastery score with range + abstention give-up rule (this milestone); full section→scale mapping planned |
+| Question        | "Can the student…"                                     | Status                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Memory**      | …recall a fact right now?                              | **Built** — FSRS recall surfaced as an honest, ranged score (`mcat_deck_score` + `mcat_mastery`), shown on desktop **and** phone                                              |
+| **Performance** | …answer a new, exam-style question that uses the fact? | **Built** — memory discounted by a *measured* transfer factor (`mcat_performance`); factor comes from the paraphrase test (challenge 7d), honest default 1.0 until measured   |
+| **Readiness**   | …get what score today, and how sure are we?            | **Built** — projected score on the real **472–528** scale with a range (`mcat_readiness`), plus the in-engine give-up rule; shown on desktop **and** phone                    |
+
+All three are computed in the **shared Rust engine** (so desktop and phone can never disagree) and rendered as three *separate* numbers, each with its own range — never blended.
 
 ### Product thesis (from the Brainlift)
 
