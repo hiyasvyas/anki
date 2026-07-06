@@ -103,3 +103,31 @@ All counts were read from the server's own `collection.anki2` (copied with its
 `-wal` so no committed change is missed), matching reviews by their millisecond
 `revlog.id` and inspecting the conflict card's `cards` row. Re-runnable with the
 snippet in Setup plus the same offline/parallel review sequence.
+
+## Automated, re-runnable version (one command, no GUI)
+
+The manual walkthrough above is backed by a fully automated harness that drives
+**two independent client collections** through the **same Rust sync engine** the
+desktop app and the AnkiDroid build share. It starts its own sync server on a
+throwaway base dir + free port (so this repo's `syncbase/` is never touched),
+does a full-upload/full-download to establish an identical baseline, then runs
+both parts and verifies the invariants against the server's own collection:
+
+```powershell
+$env:PYTHONPATH = "$PWD\out\pylib"
+out\pyenv\Scripts\python.exe -m speedrun.sync.live_sync_test
+# -> speedrun/sync/artifacts/report_sync_live.md  (+ sync_live.json)
+```
+
+**Latest run — overall PASS:**
+
+- **Part 1:** desktop reviews 10 cards offline, phone reviews 10 *different*
+  cards offline, both sync → **20 server revlog rows, 20 distinct ids, 0
+  duplicates** (none lost, none double-counted).
+- **Part 2:** same card reviewed on both offline — desktop `Again` first, phone
+  `Easy` ~1.5 s later — sync → server card ends `ivl=5, type=review` (**phone's
+  later `Easy` won** by mtime) with **both** revlog rows retained.
+
+Because both the desktop app and AnkiDroid embed this exact sync client + merge
+logic (`rslib/src/sync/collection/`), the harness reproduces the phone↔desktop
+merge deterministically. Report: [`sync/artifacts/report_sync_live.md`](sync/artifacts/report_sync_live.md).

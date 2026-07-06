@@ -42,6 +42,13 @@ service StatsService {
   // phone follows the same rule): a score is only shown once there is enough
   // graded-review evidence and topic coverage.
   rpc McatReadiness(McatReadinessRequest) returns (McatReadinessResponse);
+  // Speedrun: the whole dashboard in one round trip. Computes mastery, deck
+  // score, performance, readiness and pace from a SINGLE shared card+revlog
+  // scan instead of five independent full-collection scans (and without
+  // readiness re-running performance internally). Every field is byte-for-byte
+  // identical to calling the matching single RPC; this only removes the
+  // redundant scans that made the naive dashboard bundle ~the sum of its parts.
+  rpc McatDashboard(McatDashboardRequest) returns (McatDashboardResponse);
 }
 
 // Implicitly includes any of the above methods that are not listed in the
@@ -288,6 +295,21 @@ message McatReadinessResponse {
   repeated string reasons = 13;
   // Unix seconds when this readiness snapshot was computed.
   int64 updated_at = 14;
+}
+
+message McatDashboardRequest {
+  // Card search string (same syntax as the browser). Empty = whole collection.
+  string search = 1;
+}
+
+// The five dashboard scores computed from one shared scan. Each field equals
+// the response of the matching single RPC for the same search.
+message McatDashboardResponse {
+  McatMasteryResponse mastery = 1;
+  McatDeckScoreResponse deck_score = 2;
+  McatPerformanceResponse performance = 3;
+  McatReadinessResponse readiness = 4;
+  McatPaceResponse pace = 5;
 }
 
 message GraphsResponse {

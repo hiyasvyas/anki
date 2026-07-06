@@ -68,6 +68,22 @@ class NewDeckStats(QDialog):
         assert b is not None
         b.setAutoDefault(False)
         maybeHideClose(self.form.buttonBox)
+        # Speedrun Y2K theme: match the home dashboard on the native chrome
+        # (deck chooser + buttons)…
+        from aqt import mcat_theme
+
+        self.setStyleSheet(mcat_theme.qt_stylesheet())
+
+        # …and inject the retro-window CSS into the graphs webview. We use the
+        # webview_did_inject_style_into_page hook (fires after every SvelteKit
+        # load, once Anki's own styles are in) so our overlay reliably wins and
+        # re-applies on each deck change. Idempotent + scoped to this webview.
+        def _mcat_style_graphs(web: object) -> None:
+            if web is self.form.web:
+                self.form.web.eval(mcat_theme.inject_style_js("graphs"))
+
+        self._mcat_style_graphs = _mcat_style_graphs
+        gui_hooks.webview_did_inject_style_into_page.append(_mcat_style_graphs)
         gui_hooks.stats_dialog_will_show(self)
         self.form.web.hide_while_preserving_layout()
         self.show()
@@ -76,6 +92,12 @@ class NewDeckStats(QDialog):
         self.activateWindow()
 
     def reject(self) -> None:
+        try:
+            gui_hooks.webview_did_inject_style_into_page.remove(
+                self._mcat_style_graphs
+            )
+        except (ValueError, AttributeError):
+            pass
         self.deck_chooser.cleanup()
         self.form.web.cleanup()
         self.form.web = None  # type: ignore
@@ -138,6 +160,8 @@ class NewDeckStats(QDialog):
         return False
 
     def refresh(self) -> None:
+        # The Y2K graph CSS is injected via the webview_did_inject_style_into_page
+        # hook set up in __init__, which fires after this page finishes loading.
         self.form.web.load_sveltekit_page("graphs")
 
 

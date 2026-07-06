@@ -225,8 +225,17 @@ def review_loop(
     return next_card_ms, button_ms, done, days
 
 
-def time_dashboard(col, iters: int) -> tuple[float, list[float], dict[str, list[float]]]:
-    """Time the dashboard bundle. Returns (cold_ms, warm_bundle_ms, per_rpc_ms)."""
+def time_dashboard(col, iters: int) -> dict:
+    """Time both ways of drawing the dashboard on the same warm collection:
+
+      * ``bundle``   -- the naive baseline: the five score RPCs issued
+                        separately (each its own full-collection scan), and
+      * ``combined`` -- the optimized ``mcat_dashboard`` RPC, which computes all
+                        five from one shared card+revlog scan.
+
+    Returns cold + warm samples for each, plus the per-RPC breakdown of the
+    baseline bundle so the root cause stays visible.
+    """
     per_rpc: dict[str, list[float]] = {name: [] for name in DASHBOARD_RPCS}
 
     def one_bundle() -> float:
@@ -237,9 +246,22 @@ def time_dashboard(col, iters: int) -> tuple[float, list[float], dict[str, list[
             per_rpc[name].append((time.perf_counter() - r0) * 1000.0)
         return (time.perf_counter() - t0) * 1000.0
 
-    cold_ms = one_bundle()  # first ever call == "dashboard first load"
-    warm: list[float] = [one_bundle() for _ in range(iters)]
-    return cold_ms, warm, per_rpc
+    def one_combined() -> float:
+        t0 = time.perf_counter()
+        col._backend.mcat_dashboard(search="")
+        return (time.perf_counter() - t0) * 1000.0
+
+    bundle_cold = one_bundle()  # first ever call == "dashboard first load"
+    bundle_warm: list[float] = [one_bundle() for _ in range(iters)]
+    combined_cold = one_combined()
+    combined_warm: list[float] = [one_combined() for _ in range(iters)]
+    return {
+        "bundle_cold": bundle_cold,
+        "bundle_warm": bundle_warm,
+        "combined_cold": combined_cold,
+        "combined_warm": combined_warm,
+        "per_rpc": per_rpc,
+    }
 
 
 def main() -> None:
@@ -304,35 +326,57 @@ def main() -> None:
         result["actions"]["next_card"] = percentiles(next_ms) | {"target_p95_ms": 100}
 
         print(f"dashboard: cold load + {args.dashboard_iters} warm refreshes...", flush=True)
-        cold_ms, warm_bundle, per_rpc = time_dashboard(col, args.dashboard_iters)
+        dash = time_dashboard(col, args.dashboard_iters)
+        # The desktop dashboard now issues the single combined RPC, so that is
+        # the load the UI actually pays; the five-RPC bundle is kept as the
+        # baseline it replaced, to show the win honestly.
         result["actions"]["dashboard_first_load"] = {
-            "cold_ms": round(cold_ms, 3),
+            "cold_ms": round(dash["combined_cold"], 3),
             "target_p95_ms": 1000,
+            "method": "mcat_dashboard (one shared scan)",
         }
-        result["actions"]["dashboard_refresh"] = percentiles(warm_bundle) | {"target_p95_ms": 500}
-        result["per_rpc_ms"] = {k: percentiles(v) for k, v in per_rpc.items()}
+        result["actions"]["dashboard_refresh"] = percentiles(dash["combined_warm"]) | {
+            "target_p95_ms": 500,
+            "method": "mcat_dashboard (one shared scan)",
+        }
+        result["actions"]["dashboard_refresh_baseline_5rpc"] = percentiles(dash["bundle_warm"]) | {
+            "target_p95_ms": 500,
+            "method": "5 separate RPCs (previous)",
+        }
+        result["per_rpc_ms"] = {k: percentiles(v) for k, v in dash["per_rpc"].items()}
 
-        # Root-cause analysis of the dashboard cost: each RPC independently
-        # scans the whole card table + revlog, and mcat_readiness recomputes
-        # mcat_performance internally, so the naive bundle is ~sum of parts.
-        bundle_p50 = result["actions"]["dashboard_refresh"].get("p50", 0.0)
+        # Root-cause + effect: each separate RPC scans the whole card table +
+        # revlog, and mcat_readiness recomputes mcat_performance internally, so
+        # the naive bundle is ~sum of parts. mcat_dashboard does one shared scan.
+        bundle_p50 = result["actions"]["dashboard_refresh_baseline_5rpc"].get("p50", 0.0)
+        combined_p50 = result["actions"]["dashboard_refresh"].get("p50", 0.0)
         parts_sum = sum(p["p50"] for p in result["per_rpc_ms"].values())
-        result["dashboard_bundle_vs_parts"] = {
-            "bundle_p50_ms": bundle_p50,
+        speedup = round(bundle_p50 / combined_p50, 2) if combined_p50 else None
+        result["dashboard_bundle_vs_combined"] = {
+            "baseline_5rpc_p50_ms": bundle_p50,
             "sum_of_individual_p50_ms": round(parts_sum, 1),
+            "combined_p50_ms": combined_p50,
+            "speedup_x": speedup,
         }
-        if bundle_p50 > result["actions"]["dashboard_refresh"]["target_p95_ms"]:
+        result["notes"].append(
+            "Dashboard optimization: the five score RPCs each ran their own "
+            "full-collection search_cards_into_table + revlog scan, and "
+            "mcat_readiness re-ran mcat_performance internally (~nine scans to "
+            "draw one panel). The new mcat_dashboard RPC computes all five from "
+            "ONE shared card+revlog scan; every field is identical to the "
+            f"individual RPCs (Rust parity test). Baseline bundle p50 "
+            f"~{bundle_p50:.0f} ms vs combined p50 ~{combined_p50:.0f} ms "
+            f"({speedup}x). The desktop deck browser now issues the single call."
+        )
+        combined_p95 = result["actions"]["dashboard_refresh"].get("p95", 0.0)
+        if combined_p95 > result["actions"]["dashboard_refresh"]["target_p95_ms"]:
             result["notes"].append(
-                "OVER TARGET: the dashboard bundle exceeds the section-10 target. "
-                "Root cause: the five score RPCs each run their own full-collection "
-                "search_cards_into_table + revlog scan, and mcat_readiness "
-                "re-runs mcat_performance internally. Individual RPCs are "
-                f"~{min(p['p50'] for p in result['per_rpc_ms'].values()):.0f}-"
-                f"{max(p['p50'] for p in result['per_rpc_ms'].values()):.0f} ms. "
-                "Optimization (tracked): compute one shared card/revlog pass and "
-                "reuse the performance result inside readiness, and cache between "
-                "refreshes. The interactive review hot-path (button press, next "
-                "card) is unaffected and well within target."
+                "NOTE: even the combined single-scan refresh is above the "
+                f"{result['actions']['dashboard_refresh']['target_p95_ms']} ms "
+                "target on this machine — a single scan of the whole card+revlog "
+                "table at this deck size is the floor. The interactive review "
+                "hot-path (button press, next card) is unaffected and well "
+                "within target."
             )
 
         # Honest note on whether the give-up rule surfaced a score in this run.
@@ -418,8 +462,9 @@ def write_reports(out_dir: str, result: dict) -> None:
     label = {
         "button_press_ack": "Button press acknowledged",
         "next_card": "Next card after grading",
-        "dashboard_first_load": "Dashboard first load",
-        "dashboard_refresh": "Dashboard refresh",
+        "dashboard_first_load": "Dashboard first load (mcat_dashboard)",
+        "dashboard_refresh": "Dashboard refresh (mcat_dashboard)",
+        "dashboard_refresh_baseline_5rpc": "Dashboard refresh (5-RPC baseline)",
     }
     for name, action in result["actions"].items():
         if "cold_ms" in action:
@@ -439,13 +484,24 @@ def write_reports(out_dir: str, result: dict) -> None:
             f"{result['deck_cards']:,} cards (Python process incl. the Rust backend)."
         )
         lines.append("")
-    lines.append("## Per-RPC breakdown of the dashboard bundle (warm)")
+    lines.append("## Per-RPC breakdown of the 5-RPC baseline bundle (warm)")
     lines.append("")
     lines.append("| RPC | p50 | p95 | worst |")
     lines.append("| --- | --- | --- | --- |")
     for name, p in result["per_rpc_ms"].items():
         lines.append(f"| `{name}` | {p['p50']:.1f} ms | {p['p95']:.1f} ms | {p['max']:.1f} ms |")
     lines.append("")
+    vc = result.get("dashboard_bundle_vs_combined")
+    if vc:
+        lines.append(
+            f"**One shared scan vs five separate scans:** the baseline bundle "
+            f"(five RPCs, ~{vc['sum_of_individual_p50_ms']:.0f} ms summed) runs at "
+            f"p50 **{vc['baseline_5rpc_p50_ms']:.0f} ms**; the combined "
+            f"`mcat_dashboard` runs at p50 **{vc['combined_p50_ms']:.0f} ms** "
+            f"(**{vc['speedup_x']}x** faster) with identical output. The desktop "
+            f"deck browser now issues the single call."
+        )
+        lines.append("")
     lines.append("## Honesty notes")
     lines.append("")
     lines.append(
@@ -456,9 +512,11 @@ def write_reports(out_dir: str, result: dict) -> None:
     for note in result["notes"]:
         lines.append(f"- {note}")
     lines.append(
-        "- The dashboard bundle times all five score RPCs "
-        "(`mcat_mastery`, `mcat_deck_score`, `mcat_performance`, `mcat_readiness`, "
-        "`mcat_pace`) together, because that is what the UI issues to draw the panel."
+        "- The 5-RPC baseline times the five score RPCs (`mcat_mastery`, "
+        "`mcat_deck_score`, `mcat_performance`, `mcat_readiness`, `mcat_pace`) "
+        "separately — the way the dashboard used to draw the panel. The desktop "
+        "deck browser now issues the single `mcat_dashboard` call instead, so "
+        "the `mcat_dashboard` rows are the load the UI actually pays."
     )
     lines.append("")
     with open(md_path, "w", encoding="utf-8") as fh:

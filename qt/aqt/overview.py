@@ -198,8 +198,10 @@ class Overview:
         )
         gui_hooks.overview_will_render_content(self, content)
         content.deck = html.escape(content.deck)
+        from aqt import mcat_theme
+
         self.web.stdHtml(
-            self._body % content.__dict__,
+            mcat_theme.page_theme("overview") + (self._body % content.__dict__),
             css=["css/overview.css"],
             js=["js/vendor/jquery.min.js"],
             context=self,

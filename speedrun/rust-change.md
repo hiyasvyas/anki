@@ -80,20 +80,31 @@ engine; the 3 Rust unit tests for this change pass. Full proof command:
 
 ## Files touched (upstream) & future-merge difficulty
 
-| File                            | Change                                           | Merge risk                                                                   |
-| ------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `rslib/src/stats/mastery.rs`    | **New file** — implementation + tests            | **None** (no upstream file to conflict)                                      |
-| `rslib/src/stats/deck_score.rs` | **New file** — honest deck score + tests         | **None** (no upstream file to conflict)                                      |
-| `rslib/src/stats/mod.rs`        | +1 line: `mod mastery;`                          | **Very low**                                                                 |
-| `rslib/src/stats/service.rs`    | +2 trait methods appended to `StatsService impl` | **Low** (additive; only conflicts if upstream edits the same impl tail)      |
-| `rslib/src/storage/card/mod.rs` | +`all_cards_count()` helper                      | **Low** (additive method)                                                    |
-| `proto/anki/stats.proto`        | +1 RPC on `StatsService`, +3 messages appended   | **Low–medium** (one shared service block; resolve by re-adding our RPC line) |
-| `pylib/tests/test_stats.py`     | +2 tests appended                                | **Low**                                                                      |
+| File                            | Change                                                              | Merge risk                                                                   |
+| ------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `rslib/src/stats/mastery.rs`    | **New file** — per-topic mastery + shared scan helper + tests       | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/deck_score.rs` | **New file** — honest deck score + shared count helper + tests      | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/performance.rs`| **New file** — memory→performance bridge (measured transfer) + tests| **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/readiness.rs`  | **New file** — 472–528 projection + in-engine give-up rule + tests  | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/pace.rs`       | **New file** — per-topic pace model + shared-scan helper + tests    | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/dashboard.rs`  | **New file** — combined one-scan RPC + parity test                  | **None** (no upstream file to conflict)                                      |
+| `rslib/src/stats/mod.rs`        | +6 lines: `mod {dashboard,deck_score,mastery,pace,performance,readiness};` | **Very low** (additive `mod` lines)                                    |
+| `rslib/src/stats/service.rs`    | +7 trait methods appended to `StatsService impl`                    | **Low** (additive; only conflicts if upstream edits the same impl tail)      |
+| `rslib/src/storage/card/mod.rs` | +`all_cards_count()` helper                                         | **Low** (additive method)                                                    |
+| `proto/anki/stats.proto`        | +7 RPCs on `StatsService`, + their request/response messages        | **Low–medium** (one shared service block; resolve by re-adding our RPC lines)|
+| `qt/aqt/deckbrowser.py`         | Dashboard render: three-score panel, mastery panel, pace panel, AI panel; now issues one `mcat_dashboard` call | **Medium** (upstream actively edits this file; hooks are self-contained methods) |
+| `qt/aqt/reviewer.py`            | Pace-timer read from `mcat_pace` (fail-safe)                        | **Low–medium** (small additive hook)                                         |
+| `pylib/tests/test_stats.py`     | +tests appended (`test_mcat_*`, undo-safety)                        | **Low**                                                                      |
 
-**Design choice that minimizes merge pain:** all logic lives in a _new_ module
-(`mastery.rs`); upstream files only receive small additive hooks. No generated
-files were hand-edited — the proto change regenerates the Rust (`anki_proto`),
-Python (`stats_pb2`, `_backend_generated.py`), and TS bindings automatically.
+**Design choice that minimizes merge pain:** every score lives in its _own new_
+module under `rslib/src/stats/`; upstream files only receive small additive
+hooks (`mod` lines, appended trait methods, one proto service block, and
+self-contained Python render methods). No generated files were hand-edited — the
+proto change regenerates the Rust (`anki_proto`), Python (`stats_pb2`,
+`_backend_generated.py`), and TS bindings automatically. The combined
+`mcat_dashboard` RPC is a pure performance refactor: it reuses the same shared
+scan helpers the individual RPCs use, with a parity test proving identical
+output, so it adds no new modelling surface to merge.
 
 ## Honest deck score — point estimate + confidence range (Challenge: memory model)
 
@@ -147,18 +158,24 @@ engine code**. This was not just asserted — it was built and run on a phone
 2. **Linked it into AnkiDroid.** Set `local_backend=true` in
    `AnkiDroid/local.properties` so the app consumes the locally-built AAR instead
    of the published one, then built `:AnkiDroid:assemblePlayDebug` (x86_64).
-3. **Ran it on the device.** Installed on the emulator with the full 2887-card
-   MCAT deck loaded. A debug-only hook in `DeckPicker.updateDeckList()` calls
-   `CollectionManager.getBackend().mcatDeckScore("")`. Logcat proof:
+3. **Ran it on the device.** Installed on the emulator with the full MCAT deck
+   loaded. `DeckPicker.refreshMcatReadiness()` calls all five backend RPCs
+   (`mcatDeckScore/Mastery/Pace/Performance/Readiness`). Logcat proof after some
+   reviews had accrued:
 
    ```
-   I DeckPicker$updateDeckList: MCAT-SPEEDRUN McatDeckScore[phone/Rust]
-     score=0.0 range=[0.0,1.0] scorable=2887 rated=0 mastered=0 unseen=2887
+   I DeckPicker$refreshMcatReadiness: MCAT-SPEEDRUN McatDeckScore[phone/Rust]
+     score=0.63 range=[0.49,0.74] scorable=2917 rated=51 mastered=32 unseen=2866
+     perf=0.63 readiness=507 hasScore=false
    ```
 
-   i.e. the honest-deck-score model executed inside `librsdroid.so` on the phone:
-   2887 scorable cards, all unseen → score 0.0 with the maximum `[0.0, 1.0]`
-   confidence band (the model correctly abstains with no review data).
+   i.e. the shared engine executed inside `librsdroid.so` on the phone: not just
+   the deck score but the **new `mcat_performance` (`perf=0.63`) and
+   `mcat_readiness` (`readiness=507`, on the 472–528 scale) RPCs**, with a range
+   and `hasScore=false` — the give-up rule correctly abstaining at 51 < 230 graded
+   reviews. Full write-up + on-device screenshot of the three-score panel:
+   [`proof/phone-engine.md`](proof/phone-engine.md),
+   [`proof/phone-scores.png`](proof/phone-scores.png).
 
 ### Files touched outside `rslib` for the phone build (merge difficulty)
 

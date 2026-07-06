@@ -57,6 +57,12 @@ class AddCards(QMainWindow):
         gui_hooks.add_cards_did_init(self)
         if not is_mac:
             self.setMenuBar(None)
+        # Speedrun Y2K theme: match the home dashboard palette on this native
+        # window. Scoped to this widget only; the field editor is a webview and
+        # keeps its own styling so note content stays readable.
+        from aqt import mcat_theme
+
+        self.setStyleSheet(mcat_theme.qt_stylesheet())
         self.show()
 
     def set_deck(self, deck_id: DeckId) -> None:

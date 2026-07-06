@@ -21,6 +21,7 @@ use anki_proto::stats::McatMasteryResponse;
 use fsrs::FSRS;
 use fsrs::FSRS5_DEFAULT_DECAY;
 
+use crate::card::Card;
 use crate::prelude::*;
 use crate::scheduler::timing::SchedTimingToday;
 
@@ -35,10 +36,21 @@ struct TopicAccumulator {
     recall_sum: f32,
 }
 
+/// The result of a single mastery pass over a matched card set. Besides the
+/// sorted per-topic breakdown it carries the collection-wide totals the deck
+/// score needs, so [`super::dashboard`] can derive both from one scan.
+pub(crate) struct MasteryScan {
+    pub topics: Vec<TopicMastery>,
+    pub total_cards: u32,
+    pub rated_cards: u32,
+    pub mastered_cards: u32,
+}
+
 impl Collection {
-    /// Per-topic mastery for all cards matching `search` (empty = whole
-    /// collection). Topics are sorted by name for stable output.
-    pub fn mcat_mastery(&mut self, search: &str) -> Result<McatMasteryResponse> {
+    /// Per-topic mastery for an already-scanned card set. Topics are sorted by
+    /// name for stable output. This is the shared core of [`Self::mcat_mastery`]
+    /// and the combined dashboard pass.
+    pub(crate) fn mcat_mastery_from_cards(&mut self, cards: &[Card]) -> Result<MasteryScan> {
         let timing = self.timing_today()?;
         let sched_timing = SchedTimingToday {
             days_elapsed: timing.days_elapsed,
@@ -46,12 +58,12 @@ impl Collection {
             next_day_at: timing.next_day_at,
         };
         let fsrs = FSRS::new(None)?;
-        let cards = self.all_cards_for_search(search)?;
 
         let mut by_deck: HashMap<DeckId, TopicAccumulator> = HashMap::new();
         let mut total_cards: u32 = 0;
+        let mut total_rated: u32 = 0;
         let mut total_mastered: u32 = 0;
-        for card in &cards {
+        for card in cards {
             let acc = by_deck.entry(card.deck_id).or_default();
             acc.total_cards += 1;
             total_cards += 1;
@@ -63,6 +75,7 @@ impl Collection {
                     card.decay.unwrap_or(FSRS5_DEFAULT_DECAY),
                 );
                 acc.rated_cards += 1;
+                total_rated += 1;
                 acc.recall_sum += recall;
                 if recall >= MASTERED_RETRIEVABILITY {
                     acc.mastered_cards += 1;
@@ -94,11 +107,24 @@ impl Collection {
         }
         topics.sort_by(|a, b| a.topic.cmp(&b.topic));
 
-        Ok(McatMasteryResponse {
+        Ok(MasteryScan {
             topics,
-            mastered_threshold: MASTERED_RETRIEVABILITY,
             total_cards,
+            rated_cards: total_rated,
             mastered_cards: total_mastered,
+        })
+    }
+
+    /// Per-topic mastery for all cards matching `search` (empty = whole
+    /// collection).
+    pub fn mcat_mastery(&mut self, search: &str) -> Result<McatMasteryResponse> {
+        let cards = self.all_cards_for_search(search)?;
+        let scan = self.mcat_mastery_from_cards(&cards)?;
+        Ok(McatMasteryResponse {
+            topics: scan.topics,
+            mastered_threshold: MASTERED_RETRIEVABILITY,
+            total_cards: scan.total_cards,
+            mastered_cards: scan.mastered_cards,
         })
     }
 }

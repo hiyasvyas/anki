@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.13",
+    "generated": "2026-07-04T00:55:51.980556+00:00"
+  },
+  "result": {
+    "scenarios": [
+      {
+        "scenario": "corrupt_collection_file",
+        "opened_as_usable": false,
+        "rejected_with": "DBError",
+        "pass": true
+      },
+      {
+        "scenario": "corrupt_apkg_import",
+        "import_raised": true,
+        "error_type": "SyncError",
+        "live_notes_before": 5,
+        "live_notes_after": 5,
+        "live_integrity_ok": true,
+        "pass": true
+      },
+      {
+        "scenario": "missing_apkg_import",
+        "import_raised": true,
+        "error_type": "BackendIOError",
+        "live_notes_before": 3,
+        "live_notes_after": 3,
+        "live_integrity_ok": true,
+        "pass": true
+      },
+      {
+        "scenario": "deck_with_broken_images",
+        "missing_reported": [
+          "definitely_missing.png"
+        ],
+        "broken_card_rendered": true,
+        "render_kept_broken_src": true,
+        "render_error": "(none)",
+        "integrity_ok": true,
+        "pass": true
+      },
+      {
+        "scenario": "valid_apkg_import (control)",
+        "exported_notes": 4,
+        "export_error": "(none)",
+        "import_ok": true,
+        "import_error": "(none)",
+        "dst_notes_before": 0,
+        "dst_notes_after": 4,
+        "dst_integrity_ok": true,
+        "pass": true
+      }
+    ],
+    "overall_pass": true
+  }
+}

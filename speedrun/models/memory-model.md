@@ -24,11 +24,22 @@ no writes, no undo entry.
   **collapses to a single value**. The score never claims precision it hasn't
   earned.
 
-## Calibration plan (Sunday Step 1)
-- Hold back a slice of reviews, and check that when the model says 80% the
-  student actually recalls ≈80%. Report a **calibration chart + Brier/log-loss**
-  on the held-out reviews. (Because recall comes straight from FSRS, this is a
-  check of FSRS calibration on this deck, reported honestly.)
+## Calibration (Sunday Step 1) — built
+- We check that when the model says 80% the student recalls ≈80%, on **held-out
+  reviews**, and report a **reliability curve + Brier score + log loss (+ ECE)**.
+  Predicted recall is reconstructed from the FSRS forgetting curve
+  `R = (1 + (19/81)·t/S)^(-1/2)` (S = previous interval, t = actual elapsed), so
+  no parameters are fit on the scored outcomes. Because recall comes straight from
+  FSRS, this is a check of FSRS calibration on this deck, reported honestly.
+- Harness + artifacts:
+  [`../calibration/artifacts/report_calibration.md`](../calibration/artifacts/report_calibration.md),
+  reliability diagram [`../calibration/artifacts/reliability.svg`](../calibration/artifacts/reliability.svg).
+  Run: `python -m speedrun.calibration.calibrate [--collection PATH]`.
+- Honest limit: the current dev collection has only same-day *learning* reviews
+  (no multi-day recall history yet), so the committed run falls back to a
+  correctly-specified **synthetic** stream that validates the metrics
+  (ECE ≈ 0.01, well-calibrated). Point `--collection` at a deck with real
+  multi-day history for a real-data number — no code change.
 
 ## Give-up behaviour
 - The raw RPC always returns honest numbers. The **readiness** layer (not this

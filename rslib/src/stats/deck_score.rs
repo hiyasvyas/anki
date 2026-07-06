@@ -40,6 +40,51 @@ fn wilson_bounds(successes: u32, trials: u32) -> (f64, f64) {
     ((center - margin).max(0.0), (center + margin).min(1.0))
 }
 
+/// Build a deck-score response from already-counted totals, so the score is
+/// computed exactly one way. Every matched card is scorable (`scorable ==
+/// total`), and a card is unseen precisely when it has no memory state
+/// (`unseen == total - rated`). Shared by [`Collection::mcat_deck_score`] and
+/// the combined [`super::dashboard`] pass.
+pub(crate) fn deck_score_from_counts(
+    total_cards: u32,
+    rated_cards: u32,
+    mastered_cards: u32,
+) -> McatDeckScoreResponse {
+    let scorable_cards = total_cards;
+    let unseen_cards = total_cards.saturating_sub(rated_cards);
+
+    let (point, lower, upper) = if scorable_cards == 0 {
+        (0.0, 0.0, 0.0)
+    } else {
+        let scorable = scorable_cards as f64;
+        let unseen = unseen_cards as f64;
+        let proven = mastered_cards as f64;
+        let p_hat = if rated_cards > 0 {
+            proven / rated_cards as f64
+        } else {
+            0.0
+        };
+        let (w_lower, w_upper) = wilson_bounds(mastered_cards, rated_cards);
+        (
+            (proven + p_hat * unseen) / scorable,
+            (proven + w_lower * unseen) / scorable,
+            (proven + w_upper * unseen) / scorable,
+        )
+    };
+
+    McatDeckScoreResponse {
+        score: point as f32,
+        score_lower: lower as f32,
+        score_upper: upper as f32,
+        total_cards,
+        scorable_cards,
+        rated_cards,
+        mastered_cards,
+        unseen_cards,
+        mastered_threshold: MASTERED_RETRIEVABILITY,
+    }
+}
+
 impl Collection {
     /// Honest deck score for all cards matching `search` (empty = whole
     /// collection). See the module docs for the scoring model.
@@ -54,10 +99,8 @@ impl Collection {
         let cards = self.all_cards_for_search(search)?;
 
         let total_cards = cards.len() as u32;
-        let mut scorable_cards: u32 = 0;
         let mut rated_cards: u32 = 0;
         let mut mastered_cards: u32 = 0;
-        let mut unseen_cards: u32 = 0;
 
         for card in &cards {
             let recall = card.memory_state.map(|state| {
@@ -68,54 +111,17 @@ impl Collection {
                     card.decay.unwrap_or(FSRS5_DEFAULT_DECAY),
                 )
             });
-            let mastered = recall
-                .map(|r| r >= MASTERED_RETRIEVABILITY)
-                .unwrap_or(false);
-
-            scorable_cards += 1;
-            match recall {
-                Some(_) => {
-                    rated_cards += 1;
-                    if mastered {
-                        mastered_cards += 1;
-                    }
+            if let Some(r) = recall {
+                rated_cards += 1;
+                if r >= MASTERED_RETRIEVABILITY {
+                    mastered_cards += 1;
                 }
-                None => unseen_cards += 1,
             }
         }
 
         // Project the observed mastery rate over the unseen cards. The interval
         // width is driven entirely by how much of the deck is still unreviewed.
-        let (point, lower, upper) = if scorable_cards == 0 {
-            (0.0, 0.0, 0.0)
-        } else {
-            let scorable = scorable_cards as f64;
-            let unseen = unseen_cards as f64;
-            let proven = mastered_cards as f64;
-            let p_hat = if rated_cards > 0 {
-                proven / rated_cards as f64
-            } else {
-                0.0
-            };
-            let (w_lower, w_upper) = wilson_bounds(mastered_cards, rated_cards);
-            (
-                (proven + p_hat * unseen) / scorable,
-                (proven + w_lower * unseen) / scorable,
-                (proven + w_upper * unseen) / scorable,
-            )
-        };
-
-        Ok(McatDeckScoreResponse {
-            score: point as f32,
-            score_lower: lower as f32,
-            score_upper: upper as f32,
-            total_cards,
-            scorable_cards,
-            rated_cards,
-            mastered_cards,
-            unseen_cards,
-            mastered_threshold: MASTERED_RETRIEVABILITY,
-        })
+        Ok(deck_score_from_counts(total_cards, rated_cards, mastered_cards))
     }
 }
 

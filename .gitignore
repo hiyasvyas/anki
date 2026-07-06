@@ -24,3 +24,8 @@ ts/.svelte-kit
 docs/_build/
 docs/autoapi/
 .complexipy_cache
+
+# speedrun: self-hosted sync-server runtime data (contains the full collection + media)
+/syncbase
+# speedrun: scratch desktop app run logs (not proof artifacts)
+speedrun/proof/anki-run*.log

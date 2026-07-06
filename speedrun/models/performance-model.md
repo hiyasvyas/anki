@@ -33,11 +33,24 @@ If performance ≈ memory after measurement, we have **not** built the bridge an
 report that gap openly (per 7d). The whole point is to surface the difference
 between "remembers the card" and "can use it on a new question."
 
-## Sunday Step 2
+## Sunday Step 2 — built
 Predict whether the student gets **held-out exam-style questions** right using
 topic mastery, question difficulty, timing, and coverage; report accuracy on the
 held-out set. The transfer factor is the first, simplest version of this
 predictor and is upgraded as held-out attempt data accrues.
+
+Harness + artifact:
+[`../performance/artifacts/report_performance.md`](../performance/artifacts/report_performance.md)
+(`python -m speedrun.performance.eval_performance`). Using **2-fold
+cross-validation by card** on the 30-card paraphrase set (every reworded question
+held out once, predicted by a model that never saw its card): held-out accuracy
+**78.3%**, and modelling the transfer gap **beats a memory-only baseline** on
+Brier (0.209 vs 0.217) and log loss (0.85 vs 2.99). Recall separates the groups
+(held-out accuracy 77.8% when the card was recalled vs 16.7% when it wasn't), but
+recall alone over-states performance — which is why the bridge discounts it.
+Honest limit: the committed attempts are illustrative synthetic (`measured=false`),
+so this proves the harness + result shape; real attempts yield a measured number
+with no code change.
 
 **Outputs:** overall `performance` + range, per-topic performance + range,
 `transfer_factor` (+range), `transfer_measured`, `rated_cards`, `scorable_cards`.

@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.13",
+    "generated": "2026-07-03T21:23:19.649025+00:00"
+  },
+  "result": {
+    "iterations": 20,
+    "corruptions": 0,
+    "could_not_open": 0,
+    "lost_committed_reviews": 0,
+    "review_counts": [
+      466,
+      868,
+      1068,
+      1146,
+      1322,
+      1416,
+      1446,
+      1516,
+      1551,
+      1591,
+      1618,
+      1626,
+      1637,
+      1651,
+      1655,
+      1673,
+      1694,
+      1721,
+      1743,
+      1748
+    ],
+    "final_integrity_ok": true,
+    "final_committed_reviews": 1748,
+    "monotonic_nondecreasing": true
+  }
+}

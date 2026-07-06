@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "source": "attempts_sample.json (ILLUSTRATIVE synthetic)",
+  "measured": false,
+  "cv": "2-fold by card",
+  "n_cards": 60,
+  "transfer_factor_train": 0.8008241758241759,
+  "fold_factors": [
+    0.6785714285714285,
+    0.9230769230769231
+  ],
+  "train_recall_mean": 0.9,
+  "train_reworded_acc": 0.7166666666666667,
+  "heldout_base_rate": 0.7166666666666667,
+  "performance": {
+    "accuracy": 0.7833333333333333,
+    "brier": 0.20897860249979813,
+    "log_loss": 0.8457403038772713,
+    "mean_predicted": 0.7248169498168499
+  },
+  "memory_only": {
+    "accuracy": 0.7833333333333333,
+    "brier": 0.2166662333343333,
+    "log_loss": 2.9933614042202352,
+    "mean_predicted": 0.8999992
+  },
+  "discrimination": {
+    "recalled_group_acc": 0.7777777777777778,
+    "recalled_group_n": 54,
+    "not_recalled_group_acc": 0.16666666666666666,
+    "not_recalled_group_n": 6
+  }
+}

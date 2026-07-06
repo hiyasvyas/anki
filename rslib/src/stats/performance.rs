@@ -26,6 +26,8 @@
 //! [`pace`]: super::pace
 
 use anki_proto::stats::mcat_performance_response::TopicPerformance;
+use anki_proto::stats::McatDeckScoreResponse;
+use anki_proto::stats::McatMasteryResponse;
 use anki_proto::stats::McatPerformanceResponse;
 
 use crate::prelude::*;
@@ -80,12 +82,15 @@ impl Collection {
         }
     }
 
-    /// Expected exam performance for all cards matching `search` (empty = whole
-    /// collection). See the module docs for the model.
-    pub fn mcat_performance(&mut self, search: &str) -> Result<McatPerformanceResponse> {
+    /// Derive expected performance from an already-computed memory score and
+    /// mastery breakdown (no scan). Shared by [`Self::mcat_performance`] and the
+    /// combined [`super::dashboard`] pass so the bridge maths lives one place.
+    pub(crate) fn performance_from(
+        &self,
+        memory: &McatDeckScoreResponse,
+        mastery: &McatMasteryResponse,
+    ) -> McatPerformanceResponse {
         let tf = self.mcat_transfer_factor();
-        let memory = self.mcat_deck_score(search)?;
-        let mastery = self.mcat_mastery(search)?;
 
         let performance = clamp01(memory.score as f64 * tf.factor);
         let perf_lower = clamp01(memory.score_lower as f64 * tf.lower);
@@ -93,12 +98,12 @@ impl Collection {
 
         let topics = mastery
             .topics
-            .into_iter()
+            .iter()
             .map(|t| {
                 let recall = t.average_recall as f64;
                 TopicPerformance {
                     deck_id: t.deck_id,
-                    topic: t.topic,
+                    topic: t.topic.clone(),
                     memory_recall: t.average_recall,
                     performance: clamp01(recall * tf.factor) as f32,
                     perf_lower: clamp01(recall * tf.lower) as f32,
@@ -109,7 +114,7 @@ impl Collection {
             })
             .collect();
 
-        Ok(McatPerformanceResponse {
+        McatPerformanceResponse {
             topics,
             performance: performance as f32,
             perf_lower: perf_lower as f32,
@@ -120,7 +125,15 @@ impl Collection {
             transfer_measured: tf.measured,
             rated_cards: memory.rated_cards,
             scorable_cards: memory.scorable_cards,
-        })
+        }
+    }
+
+    /// Expected exam performance for all cards matching `search` (empty = whole
+    /// collection). See the module docs for the model.
+    pub fn mcat_performance(&mut self, search: &str) -> Result<McatPerformanceResponse> {
+        let memory = self.mcat_deck_score(search)?;
+        let mastery = self.mcat_mastery(search)?;
+        Ok(self.performance_from(&memory, &mastery))
     }
 }
 

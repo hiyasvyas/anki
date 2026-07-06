@@ -178,6 +178,12 @@ class Browser(QMainWindow):
         # legacy alias
         self.model = MockModel(self)
         self.setupSearch(card, search)
+        # Speedrun Y2K theme: match the home dashboard palette on this native
+        # window (table, sidebar, toolbar, buttons). Scoped to this window only;
+        # the editor is a webview and keeps its own styling.
+        from aqt import mcat_theme
+
+        self.setStyleSheet(mcat_theme.qt_stylesheet())
         self.show()
 
     def on_operation_did_execute(

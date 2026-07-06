@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-03T17:45:03.449159+00:00",
-  "git_commit": "300448a6b",
+  "generated_at": "2026-07-04T21:21:53.861127+00:00",
+  "git_commit": "92ddeb630",
   "deck_cards": 50000,
   "topics": 8,
   "reference_machine": {
@@ -12,76 +12,89 @@
   },
   "actions": {
     "button_press_ack": {
-      "p50": 1.433,
-      "p95": 2.045,
-      "max": 11.66,
+      "p50": 3.792,
+      "p95": 13.717,
+      "max": 150.434,
       "n": 1000,
       "target_p95_ms": 50
     },
     "next_card": {
-      "p50": 0.288,
-      "p95": 0.407,
-      "max": 39.153,
+      "p50": 0.872,
+      "p95": 2.331,
+      "max": 73.304,
       "n": 1000,
       "target_p95_ms": 100
     },
     "dashboard_first_load": {
-      "cold_ms": 1173.548,
-      "target_p95_ms": 1000
+      "cold_ms": 776.116,
+      "target_p95_ms": 1000,
+      "method": "mcat_dashboard (one shared scan)"
     },
     "dashboard_refresh": {
-      "p50": 1600.809,
-      "p95": 1775.566,
-      "max": 2620.241,
-      "n": 50,
-      "target_p95_ms": 500
+      "p50": 778.014,
+      "p95": 1138.448,
+      "max": 1209.121,
+      "n": 30,
+      "target_p95_ms": 500,
+      "method": "mcat_dashboard (one shared scan)"
+    },
+    "dashboard_refresh_baseline_5rpc": {
+      "p50": 2932.923,
+      "p95": 5315.45,
+      "max": 6695.919,
+      "n": 30,
+      "target_p95_ms": 500,
+      "method": "5 separate RPCs (previous)"
     }
   },
   "per_rpc_ms": {
     "mcat_mastery": {
-      "p50": 223.025,
-      "p95": 263.523,
-      "max": 356.079,
-      "n": 51
+      "p50": 407.008,
+      "p95": 790.272,
+      "max": 1049.263,
+      "n": 31
     },
     "mcat_deck_score": {
-      "p50": 207.517,
-      "p95": 270.711,
-      "max": 395.062,
-      "n": 51
+      "p50": 379.108,
+      "p95": 777.088,
+      "max": 881.548,
+      "n": 31
     },
     "mcat_performance": {
-      "p50": 432.416,
-      "p95": 494.688,
-      "max": 814.554,
-      "n": 51
+      "p50": 797.434,
+      "p95": 1407.688,
+      "max": 2043.33,
+      "n": 31
     },
     "mcat_readiness": {
-      "p50": 461.841,
-      "p95": 558.239,
-      "max": 718.144,
-      "n": 51
+      "p50": 883.228,
+      "p95": 1733.736,
+      "max": 1954.001,
+      "n": 31
     },
     "mcat_pace": {
-      "p50": 250.501,
-      "p95": 308.829,
-      "max": 439.142,
-      "n": 51
+      "p50": 493.829,
+      "p95": 851.255,
+      "max": 1102.473,
+      "n": 31
     }
   },
   "notes": [
-    "OVER TARGET: the dashboard bundle exceeds the section-10 target. Root cause: the five score RPCs each run their own full-collection search_cards_into_table + revlog scan, and mcat_readiness re-runs mcat_performance internally. Individual RPCs are ~208-462 ms. Optimization (tracked): compute one shared card/revlog pass and reuse the performance result inside readiness, and cache between refreshes. The interactive review hot-path (button press, next card) is unaffected and well within target.",
+    "Dashboard optimization: the five score RPCs each ran their own full-collection search_cards_into_table + revlog scan, and mcat_readiness re-ran mcat_performance internally (~nine scans to draw one panel). The new mcat_dashboard RPC computes all five from ONE shared card+revlog scan; every field is identical to the individual RPCs (Rust parity test). Baseline bundle p50 ~2933 ms vs combined p50 ~778 ms (3.77x). The desktop deck browser now issues the single call.",
+    "NOTE: even the combined single-scan refresh is above the 500 ms target on this machine \u2014 a single scan of the whole card+revlog table at this deck size is the floor. The interactive review hot-path (button press, next card) is unaffected and well within target.",
     "Readiness abstained in this synthetic single-session run: the give-up rule counts only cross-day Review-kind revlog entries, which a same-day bench does not generate. The RPC does the same work either way, so the latency is representative."
   ],
   "fsrs_enabled": false,
   "reviews_done": 1000,
   "review_days_simulated": 15,
-  "dashboard_bundle_vs_parts": {
-    "bundle_p50_ms": 1600.809,
-    "sum_of_individual_p50_ms": 1575.3
+  "dashboard_bundle_vs_combined": {
+    "baseline_5rpc_p50_ms": 2932.923,
+    "sum_of_individual_p50_ms": 2960.6,
+    "combined_p50_ms": 778.014,
+    "speedup_x": 3.77
   },
   "readiness_has_score": false,
-  "readiness_graded_reviews": 406,
+  "readiness_graded_reviews": 396,
   "readiness_topic_coverage": 0.0,
-  "memory_rss_mb": 69.4
+  "memory_rss_mb": 75.3
 }

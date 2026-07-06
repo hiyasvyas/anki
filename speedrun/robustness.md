@@ -41,3 +41,16 @@ coverage map (huge deck skips a high-weight topic — `speedrun/coverage`),
 leakage check (test data leaked into training — `speedrun/ai`), the checker's
 "correct-but-useless" count (AI cards that are useless — `speedrun/ai`), and the
 generator's offline fallback (AI service down/rate-limited — `speedrun/ai`).
+
+## Crash in the middle of a review (challenge 7g)
+
+`python -m speedrun.crash.crash_test` hard-kills a worker process (SIGKILL /
+TerminateProcess) **mid-review, 20 times in a row**, against the **real shared
+Anki engine** — not a mock — then reopens the collection with the backend and
+runs `PRAGMA integrity_check` after each kill. Latest run: **20 kills → 0
+corrupted collections, 0 previously-committed reviews lost**, committed-review
+count monotonic (466 → 1,748). Anki's SQLite write-ahead log makes commits atomic
+and durable and rolls back an interrupted write cleanly, so a kill can only lose
+the uncommitted tail of a session, never corrupt the file; the shared engine
+carries the same guarantee to the phone build. Report:
+[`speedrun/crash/artifacts/report_crash.md`](crash/artifacts/report_crash.md).

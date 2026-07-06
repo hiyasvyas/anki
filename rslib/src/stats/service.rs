@@ -78,6 +78,13 @@ impl crate::services::StatsService for Collection {
     ) -> error::Result<anki_proto::stats::McatReadinessResponse> {
         self.mcat_readiness(&input.search)
     }
+
+    fn mcat_dashboard(
+        &mut self,
+        input: anki_proto::stats::McatDashboardRequest,
+    ) -> error::Result<anki_proto::stats::McatDashboardResponse> {
+        self.mcat_dashboard(&input.search)
+    }
 }
 
 impl From<RevlogReviewKind> for i32 {

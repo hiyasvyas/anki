@@ -11,20 +11,19 @@ sees a card, and it works with the AI off" proof.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
-from typing import Dict, List
+from typing import List
 
 from . import baselines as baselines_mod
 from . import checker as checker_mod
 from . import config
 from . import eval as eval_mod
+from . import garbled_test as garbled_mod
 from . import generator as generator_mod
 from . import items as items_mod
 from . import leakage as leakage_mod
 from . import paraphrase_test as paraphrase_mod
-from . import textsim
 from .sources import index_by_id, load_sources
 
 
@@ -62,7 +61,6 @@ def cmd_check(args: argparse.Namespace) -> checker_mod.GoldReport:
     gold = items_mod.load_gold()
     items = items_mod.load_generated()
 
-    results = checker_mod.check_all(items, sources_by_id, gold)
     report = checker_mod.gold_set_report(items, sources_by_id, gold)
 
     lines: List[str] = []
@@ -311,6 +309,10 @@ def cmd_all(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_garbled(args: argparse.Namespace) -> int:
+    return garbled_mod.main()
+
+
 COMMANDS = {
     "generate": cmd_generate,
     "check": cmd_check,
@@ -318,6 +320,7 @@ COMMANDS = {
     "baselines": cmd_baselines,
     "leakage": cmd_leakage,
     "paraphrase": cmd_paraphrase,
+    "garbled": cmd_garbled,
     "all": cmd_all,
 }
 

@@ -1,0 +1,33 @@
+{
+  "endpoint": "http://127.0.0.1:49165/",
+  "baseline_cards_desktop": 25,
+  "baseline_cards_phone": 25,
+  "baseline_identical": true,
+  "part1": {
+    "reviewed_desktop": 10,
+    "reviewed_phone": 10,
+    "server_revlog_rows": 20,
+    "server_revlog_distinct_ids": 20,
+    "duplicate_ids": 0,
+    "expected": 20,
+    "pass": true
+  },
+  "part2": {
+    "conflict_cid": 1783125813215,
+    "desktop_review": {
+      "ease": "Again(1)",
+      "ivl": 0
+    },
+    "phone_review_later": {
+      "ease": "Easy(4)",
+      "ivl": 5
+    },
+    "server_card_ivl": 5,
+    "server_card_type": 2,
+    "server_revlog_rows_for_card": 2,
+    "winner": "phone (later mtime)",
+    "both_reviews_retained": true,
+    "pass": true
+  },
+  "overall_pass": true
+}

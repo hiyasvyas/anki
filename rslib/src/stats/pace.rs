@@ -30,7 +30,9 @@ use std::collections::HashMap;
 use anki_proto::stats::mcat_pace_response::TopicPace;
 use anki_proto::stats::McatPaceResponse;
 
+use crate::card::Card;
 use crate::prelude::*;
+use crate::revlog::RevlogEntry;
 use crate::search::SortMode;
 
 /// Pace-ladder rung targets, in ms. Index 0 is "unlimited" (no timer); the last
@@ -176,23 +178,34 @@ impl Collection {
     /// collection).
     pub fn mcat_pace(&mut self, search: &str) -> Result<McatPaceResponse> {
         let now = TimestampSecs::now();
-        let months = self.pace_exam_months_remaining(now);
-        let start = starting_rung(months);
-        let cutoff_ms = (now.0 - PACE_WINDOW_DAYS * 86_400) * 1000;
-
         let guard = self.search_cards_into_table(search, SortMode::NoOrder)?;
         let cards = guard.col.storage.all_searched_cards()?;
         let revlog = guard.col.storage.get_revlog_entries_for_searched_cards()?;
         drop(guard);
+        self.mcat_pace_from_scan(&cards, &revlog, now)
+    }
+
+    /// Per-topic pace from an already-scanned card set and its revlog. Shared by
+    /// [`Self::mcat_pace`] and the combined [`super::dashboard`] pass so the two
+    /// compute pace identically from one scan.
+    pub(crate) fn mcat_pace_from_scan(
+        &mut self,
+        cards: &[Card],
+        revlog: &[RevlogEntry],
+        now: TimestampSecs,
+    ) -> Result<McatPaceResponse> {
+        let months = self.pace_exam_months_remaining(now);
+        let start = starting_rung(months);
+        let cutoff_ms = (now.0 - PACE_WINDOW_DAYS * 86_400) * 1000;
 
         let deck_of: HashMap<CardId, DeckId> = cards.iter().map(|c| (c.id, c.deck_id)).collect();
         // Seed every matched topic so topics with cards but no recent reviews
         // still appear (as unlimited, awaiting data).
         let mut by_deck: HashMap<DeckId, DeckPace> = HashMap::new();
-        for c in &cards {
+        for c in cards {
             by_deck.entry(c.deck_id).or_default();
         }
-        for e in &revlog {
+        for e in revlog {
             if e.id.0 < cutoff_ms || !(1..=4).contains(&e.button_chosen) {
                 continue;
             }

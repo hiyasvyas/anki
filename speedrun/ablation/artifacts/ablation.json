@@ -1,0 +1,82 @@
+{
+  "main": {
+    "n_students": 300,
+    "seed": 20260703,
+    "confusable": true,
+    "arms_mixed_mean": {
+      "full": 0.9776752189761716,
+      "ablation": 0.9268832385772711,
+      "plain": 0.9274269919587689
+    },
+    "arms_single_mean": {
+      "full": 0.9998114262270047,
+      "ablation": 0.9998114262270047,
+      "plain": 0.9998467933331189
+    },
+    "primary": {
+      "comparison": "interleave ON minus interleave OFF, paired across students",
+      "mean_diff": 0.0507919803989006,
+      "ci95": [
+        0.048446918507047916,
+        0.053137042290753285
+      ],
+      "significant": true
+    },
+    "secondary_whole_app_vs_plain": {
+      "mean_diff": 0.0502482270174029,
+      "ci95": [
+        0.04790174213316597,
+        0.05259471190163983
+      ],
+      "significant": true
+    },
+    "null_single_topic": {
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "near_zero": true
+    }
+  },
+  "non_confusable_sensitivity": {
+    "n_students": 300,
+    "seed": 20260703,
+    "confusable": false,
+    "arms_mixed_mean": {
+      "full": 0.9998114262270047,
+      "ablation": 0.9998114262270047,
+      "plain": 0.9998467933331189
+    },
+    "arms_single_mean": {
+      "full": 0.9998114262270047,
+      "ablation": 0.9998114262270047,
+      "plain": 0.9998467933331189
+    },
+    "primary": {
+      "comparison": "interleave ON minus interleave OFF, paired across students",
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "significant": false
+    },
+    "secondary_whole_app_vs_plain": {
+      "mean_diff": -3.5367106114259085e-05,
+      "ci95": [
+        -4.236037636622299e-05,
+        -2.8373835862295178e-05
+      ],
+      "significant": false
+    },
+    "null_single_topic": {
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "near_zero": true
+    }
+  }
+}

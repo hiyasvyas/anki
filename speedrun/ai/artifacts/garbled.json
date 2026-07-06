@@ -1,0 +1,265 @@
+{
+  "n_cases": 18,
+  "n_malformed": 17,
+  "malformed_reaching_user": 0,
+  "malformed_dropped_at_parse": 5,
+  "malformed_blocked_by_gate": 12,
+  "controls": 1,
+  "controls_pass": true,
+  "overall_pass": true,
+  "cases": [
+    {
+      "name": "empty_response",
+      "desc": "AI returned an empty body (offline/timeout)",
+      "malformed": true,
+      "expect": "dropped_at_parse",
+      "items_parsed": 0,
+      "reached_user": 0,
+      "blocked": 0,
+      "disposition": "dropped_at_parse",
+      "reasons": [],
+      "ok": true
+    },
+    {
+      "name": "prose_refusal",
+      "desc": "AI returned prose, not JSON",
+      "malformed": true,
+      "expect": "dropped_at_parse",
+      "items_parsed": 0,
+      "reached_user": 0,
+      "blocked": 0,
+      "disposition": "dropped_at_parse",
+      "reasons": [],
+      "ok": true
+    },
+    {
+      "name": "truncated_json",
+      "desc": "Rate-limited mid-stream: truncated JSON",
+      "malformed": true,
+      "expect": "dropped_at_parse",
+      "items_parsed": 0,
+      "reached_user": 0,
+      "blocked": 0,
+      "disposition": "dropped_at_parse",
+      "reasons": [],
+      "ok": true
+    },
+    {
+      "name": "empty_array",
+      "desc": "Model returned an empty array (nothing usable)",
+      "malformed": true,
+      "expect": "dropped_at_parse",
+      "items_parsed": 0,
+      "reached_user": 0,
+      "blocked": 0,
+      "disposition": "dropped_at_parse",
+      "reasons": [],
+      "ok": true
+    },
+    {
+      "name": "json_scalar",
+      "desc": "Model returned a bare scalar, not items",
+      "malformed": true,
+      "expect": "dropped_at_parse",
+      "items_parsed": 0,
+      "reached_user": 0,
+      "blocked": 0,
+      "disposition": "dropped_at_parse",
+      "reasons": [],
+      "ok": true
+    },
+    {
+      "name": "api_error_body",
+      "desc": "Provider error JSON instead of cards",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "answer_index out of range",
+        "expected 4-4 choices, got 0",
+        "grounding 0.00 < 0.60",
+        "stem too short / trivial"
+      ],
+      "ok": true
+    },
+    {
+      "name": "wrong_schema",
+      "desc": "Right JSON, wrong shape (no stem/choices)",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "answer_index out of range",
+        "expected 4-4 choices, got 0",
+        "grounding 0.00 < 0.60",
+        "stem too short / trivial"
+      ],
+      "ok": true
+    },
+    {
+      "name": "three_choices",
+      "desc": "Only 3 choices (MCAT needs 4)",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "expected 4-4 choices, got 3",
+        "grounding 0.00 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "five_choices",
+      "desc": "5 choices (too many)",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "expected 4-4 choices, got 5",
+        "grounding 0.00 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "duplicate_choices",
+      "desc": "Two identical choices",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "duplicate choices",
+        "grounding 0.50 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "answer_index_oob",
+      "desc": "answer_index points nowhere",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "answer_index out of range",
+        "grounding 0.00 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "empty_stem",
+      "desc": "Empty / trivial stem",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "grounding 0.50 < 0.60",
+        "stem too short / trivial"
+      ],
+      "ok": true
+    },
+    {
+      "name": "injection_stem",
+      "desc": "Prompt injection leaked into the stem",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "grounding 0.50 < 0.60",
+        "possible prompt-injection marker: 'ignore previous'"
+      ],
+      "ok": true
+    },
+    {
+      "name": "injection_tokens",
+      "desc": "Chat control tokens in a choice",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "grounding 0.00 < 0.60",
+        "possible prompt-injection marker: '<|'"
+      ],
+      "ok": true
+    },
+    {
+      "name": "html_script",
+      "desc": "XSS-style script tag smuggled into a choice",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "grounding 0.00 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "ungrounded",
+      "desc": "Well-formed but not supported by the source",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "grounding 0.00 < 0.60"
+      ],
+      "ok": true
+    },
+    {
+      "name": "near_copy",
+      "desc": "Stem copies the source wording (memorized, not transfer)",
+      "malformed": true,
+      "expect": "blocked_by_gate",
+      "items_parsed": 1,
+      "reached_user": 0,
+      "blocked": 1,
+      "disposition": "blocked_by_gate",
+      "reasons": [
+        "near-copy: stem overlap 1.00 >= 0.55"
+      ],
+      "ok": true
+    },
+    {
+      "name": "control_good",
+      "desc": "Well-formed, grounded, reworded card (SHOULD pass)",
+      "malformed": false,
+      "expect": "reached_user",
+      "items_parsed": 1,
+      "reached_user": 1,
+      "blocked": 0,
+      "disposition": "reached_user",
+      "reasons": [],
+      "ok": true
+    }
+  ]
+}

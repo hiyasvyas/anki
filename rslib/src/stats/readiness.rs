@@ -25,6 +25,7 @@
 //! Like the other Mcat* queries this is a strictly read-only pass: it performs
 //! no writes and creates no undo entry, so it is inherently undo-safe.
 
+use anki_proto::stats::McatPerformanceResponse;
 use anki_proto::stats::McatReadinessResponse;
 
 use crate::prelude::*;
@@ -71,7 +72,17 @@ impl Collection {
     pub fn mcat_readiness(&mut self, search: &str) -> Result<McatReadinessResponse> {
         let perf = self.mcat_performance(search)?;
         let graded_reviews = self.mcat_graded_reviews(search)?;
+        Ok(self.readiness_from(&perf, graded_reviews))
+    }
 
+    /// Derive readiness from an already-computed performance result and graded
+    /// review count (no scan). Shared by [`Self::mcat_readiness`] and the
+    /// combined [`super::dashboard`] pass so the give-up rule lives one place.
+    pub(crate) fn readiness_from(
+        &self,
+        perf: &McatPerformanceResponse,
+        graded_reviews: u32,
+    ) -> McatReadinessResponse {
         // Topic coverage: fraction of topics (decks with cards) that have at
         // least one rated card.
         let topic_count = perf.topics.len();
@@ -118,7 +129,7 @@ impl Collection {
             reasons.push(format!("weakest topic: {}", weakest.topic));
         }
 
-        Ok(McatReadinessResponse {
+        McatReadinessResponse {
             has_score,
             projected_score,
             score_lower,
@@ -133,7 +144,7 @@ impl Collection {
             confidence: confidence_label(topic_coverage).to_string(),
             reasons,
             updated_at: TimestampSecs::now().0,
-        })
+        }
     }
 }
 

@@ -34,6 +34,13 @@ wheels:
 installer:
     {{ ninja }} installer:package
 
+# Speedrun challenge 7h: benchmark the shared Rust engine on a 50k-card deck.
+# Prints p50/p95/worst for button press, next card and dashboard, and writes
+# speedrun/proof/latency.{md,json}. Builds pylib first so it runs from a clean tree.
+bench:
+    {{ ninja }} pylib
+    {{ if os() == "windows" { '$env:PYTHONPATH = "$PWD\\out\\pylib"; out\\pyenv\\Scripts\\python.exe speedrun\\bench\\latency.py' } else { 'PYTHONPATH="$PWD/out/pylib" out/pyenv/bin/python speedrun/bench/latency.py' } }}
+
 # Build and run all checks (lint + test) - lets ninja handle dependencies
 check:
     {{ ninja }} pylib qt check

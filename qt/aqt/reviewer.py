@@ -327,11 +327,13 @@ class Reviewer:
     ##########################################################################
 
     def revHtml(self) -> str:
+        from aqt import mcat_theme
+
         extra = self.mw.col.conf.get("reviewExtra", "")
         fade = ""
         if self.mw.pm.video_driver() == VideoDriver.Software:
             fade = "<script>qFade=0;</script>"
-        return f"""
+        return mcat_theme.page_theme("reviewer") + f"""
 <div id="_mark" hidden>&#x2605;</div>
 <div id="_flag" hidden>&#x2691;</div>
 {fade}
@@ -475,8 +477,9 @@ class Reviewer:
             "var target=%d;"
             "if(!target||target<=0){if(el)el.remove();return;}"
             "if(!el){el=document.createElement('div');el.id='mcat-pace';"
-            "el.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;"
-            "padding:6px 10px;border-radius:8px;font:600 12px system-ui;pointer-events:none;';"
+            "el.style.cssText='position:fixed;right:16px;bottom:16px;z-index:9999;"
+            "padding:12px 20px;border-radius:12px;font:700 32px system-ui;"
+            "font-variant-numeric:tabular-nums;pointer-events:none;';"
             "document.body.appendChild(el);}"
             "var start=Date.now();"
             "function upd(){var el=document.getElementById('mcat-pace');if(!el)return;"
@@ -858,7 +861,9 @@ class Reviewer:
     ##########################################################################
 
     def _bottomHTML(self) -> str:
-        return """
+        from aqt import mcat_theme
+
+        return mcat_theme.page_theme("reviewer_bottom") + """
 <center id=outer>
 <table id=innertable width=100%% cellspacing=0 cellpadding=0>
 <tr>
